@@ -29,8 +29,7 @@ $config = [
      * external url, no matter where you come from (direct access or via the
      * reverse proxy).
      */
-    'baseurlpath' => 'http://phplist.test/simplesamlphp/www/',
-
+    'baseurlpath' => 'simplesamlphp/www/',
     /*
      * The 'application' configuration array groups a set configuration options
      * relative to an application protected by SimpleSAMLphp.
@@ -177,7 +176,8 @@ $config = [
      * Example:
      *   'trusted.url.domains' => ['sp.example.com', 'app.example.com'],
      */
-    'trusted.url.domains' => ['phplist.test'],
+    'trusted.url.domains' => ['phplist.test', 'localhost'],
+    'assertion.allowedClockSkew' => 1800, // Tolerance in seconds (e.g., 3 minutes)
 
     /*
      * Enable regular expression matching of trusted.url.domains.
@@ -546,7 +546,7 @@ $config = [
      * Example:
      *  'session.cookie.domain' => '.example.org',
      */
-    'session.cookie.domain' => '',
+    'session.cookie.domain' => '.localhost',
 
     /*
      * Set the secure flag in the cookie.
@@ -573,7 +573,7 @@ $config = [
      * Options to override the default settings for php sessions.
      */
     'session.phpsession.cookiename' => 'SimpleSAML',
-    'session.phpsession.savepath' => null,
+    'session.phpsession.savepath' => '/var/lib/php/sessions',
     'session.phpsession.httponly' => true,
 
     /*
@@ -1107,6 +1107,12 @@ $config = [
      * The default datastore is 'phpsession'.
      */
     'store.type'                    => 'phpsession',
+    'session.cookie_domain' => '.localhost',
+    'session.cookie_path' => '/',
+    'session.cookie_secure' => false,
+//    'store.type' => 'redis',
+//    'store.redis.timeout' => 0,         // Connection timeout in seconds (0 for no timeout)
+//    'store.redis.database' => 0,        // Redis database index
 
     /*
      * The DSN the sql datastore should connect to.

@@ -18,6 +18,6 @@
     "source": "https://github.com/phpList/phpList3"
   },
   "require": {
-    "php": ">=7.0"
+    "php": ">=7.4"
   }
 }

@@ -7,8 +7,8 @@
  *
  * See: https://simplesamlphp.org/docs/stable/simplesamlphp-reference-idp-remote
  */
-$metadata['https://sso.phplist.com:8443/auth/realms/master'] = [
-    'SingleSignOnService'  => 'https://sso.phplist.com:8443/auth/realms/master/protocol/saml',
-    'SingleLogoutService'  => 'https://sso.phplist.com:844/auth/realms/master/protocol/saml',
-    'certData' => 'MIICmzCCAYMCBgF95+oEhTANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDDAZtYXN0ZXIwHhcNMjExMjIzMTUyODMzWhcNMzExMjIzMTUzMDEzWjARMQ8wDQYDVQQDDAZtYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCu+oxXu74e+IUYKspD2iImLA8NjPXbuGWkhnd7pjhVOKokltUKaCCYHppEJZAcPSgyRG8dG/fTy1Zs4Znz9SmvArZ/kPkqlhL6cgFVltvj1uVogMNX4r/Ls3OLhbF3LaRoaRUDjVObdqV8fDdcxFHkhoPJTAuMhSk6KVCtP5DKjU31UYRxUPOfDLTAv0ZbUCuZ3Wqrff5LKohOTBSqhpCos4ggZ1Tr64Mv+cZzzvyzrQ5sWkKKtr+NEgapFy4wYAUnObY3HpkNHmwOqr6Fq4qlI4e/JCVLmkgveU8OF9qP/IPbmk+zCgtMDEB0IaWEmkeLalZvQyPe1OdMGbsUlFZDAgMBAAEwDQYJKoZIhvcNAQELBQADggEBADhNjfhcbWp8nJEZk44SjJBlyXYY06gd2hWeuczhoOpUX1Krdnkia5CeTPyMyDrRBdT5cImfoMdJ3YeObx7qdHxSt2HQ1nc3Ekei8P42eaYLEzejdENKzoLYtKgCOtJQzonicsRa245R+Tmlz8kzSb6GWEjzUTi72TAvNcqX3/mnsvwzblXnZ7JlOiGDzbB4oF9VGGNlw0og9bpKUxsn0S+I3pyWgP3DoQbeiyXk2oRGqxyJhJf6OcNcKWfKrRUmKA7lsyfCg57eDdA5+zZkPin9on8BrVxwn84NS8qFkGKLm0iJ1VJGKvXfDHUlEmdm/MGMqQX0WrlLH9t/KoXPKDM=',
+$metadata['https://sso.phplist.com:8443/realms/master'] = [
+    'SingleSignOnService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
+    'SingleLogoutService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
+    'certData' => 'MIICmzCCAYMCBgGT+ZELyzANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDDAZtYXN0ZXIwHhcNMjQxMjI0MTY0NTUyWhcNMzQxMjI0MTY0NzMyWjARMQ8wDQYDVQQDDAZtYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCQw7+3fpK1RK3j5pN0/oqM/fuvR6u/zRUOlN/LYYvMkmMzG+OoIYybp76qDDqw/6JV6jmSReobmXUX/+97N2gvIrjBIhZG4XXB1qlLJBwkZKXxbu0bRh9Ag0wZuZHHNaB4fByynHvihNnVDzVcICfQybj2Ry8LuDZPo7bnp5zKi++Dz/VxutdA39gRzsv7L5/FZQHNCdxSB59YsGCcMgzxRfgePMw3KLwCHUMzXzusruXr9K3EaosG5cpKQZJYxxRQxDuOZc/HAuP5/y0dHKOO9vftUOgbo2AFi0Eo4OD+moTIiEHgfptXds0vT5s/M3Ql4K++xLIDHkvVPzOjApl7AgMBAAEwDQYJKoZIhvcNAQELBQADggEBABr73c78puB8X3+Kebta+A4qhGSB66OVkssZ8XjKLx3bhl0dzoarj5PJmJhvt6i6FxcVJtCqHHhLAp/pHRkLymjkmm46vhV6C73C/0T8tp+57hxVJoCrIINxlMy63AVF6uxk9r7T7fAjPVSNvvgomS8VjMWosLuKVrt94aiZNz60su+ZwPWVk0chEPgTDuu/+dHG7rF5GBr6uzAIaFx78NIDug2AXbDx99YdfjFIocvdvgQdWF0Z2PZjI/OhxtJEITNXaAC1HE51jYAemExp7OYkmtSym9eI5xCedyVZHdjCJbvuLeb6vtq/08NpY6VVdrmk+QVtsssaw7vwHU/kWfE=',
 ];

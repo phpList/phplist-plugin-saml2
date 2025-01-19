@@ -1,5 +1,12 @@
 <?php
 
+require_once dirname(__FILE__, 2) . '/defaultplugin.php';
+require_once __DIR__ . '/simplesaml/simplesamlphp/lib/_autoload.php';
+
+use SimpleSAML\Auth\Simple;
+use SimpleSAML\Session;
+use SimpleSAML\Utils\HTTP;
+
 class simplesaml extends phplistPlugin
 {
     public $name = 'simplesaml';
@@ -10,8 +17,8 @@ class simplesaml extends phplistPlugin
     public $authProvider = true;
     public $description = 'Login to phpList with SAML';
     public $documentationUrl = 'https://resources.phplist.com/plugin/simplesaml';
-    public $settings = array(
-        'simplesaml_option1' => array(
+    public $settings = [
+        'simplesaml_option1' => [
             'value' => 0,
             'description' => 'Some config value',
             'type' => 'integer',
@@ -19,24 +26,20 @@ class simplesaml extends phplistPlugin
             'min' => 0,
             'max' => 999999,
             'category' => 'SSO config',
-        ),
-        'simplesaml_option2' => array(
-            'value' => 0,
-            'description' => 'Some other config value',
-            'type' => 'integer',
-            'allowempty' => 0,
-            'min' => 0,
-            'max' => 999999,
-            'category' => 'SSO config',
-        ),
-    );
+        ]
+    ];
+
+    private array $db;
+    private array $config;
 
     function __construct()
     {
         if ( version_compare(PHP_VERSION, '7.4.0') >= 0) {
-            require_once(__DIR__ .'/simplesaml/simplesamlphp/lib/_autoload.php');
+            require_once(__DIR__ . '/simplesaml/simplesamlphp/lib/_autoload.php');
         }
         parent::__construct();
+        $this->db = $GLOBALS['tables'];
+        $this->config = $GLOBALS['config'];
     }
 
     /**
@@ -52,7 +55,7 @@ class simplesaml extends phplistPlugin
      */
     public function adminName($id)
     {
-        $req = Sql_Fetch_Row_Query(sprintf('select loginname from %s where id = %d', $GLOBALS['tables']['admin'], $id));
+        $req = Sql_Fetch_Row_Query(sprintf('select loginname from %s where id = %d', $this->db['admin'], $id));
 
         return $req[0] ? $req[0] : s('Nobody');
     }
@@ -67,9 +70,9 @@ class simplesaml extends phplistPlugin
      *
      * @return string;
      */
-    public function adminEmail($id)
+    public function adminEmail($id): string
     {
-        $req = Sql_Fetch_Row_Query(sprintf('select email from %s where id = %d', $GLOBALS['tables']['admin'], $id));
+        $req = Sql_Fetch_Row_Query(sprintf('select email from %s where id = %d', $this->db['admin'], $id));
 
         return $req[0] ? $req[0] : '';
     }
@@ -82,13 +85,12 @@ class simplesaml extends phplistPlugin
      *
      * @param string $email email address
      *
-     * @return ID if found or false if not;
      */
-    public function adminIdForEmail($email)
-    { //Obtain admin Id from a given email address.
+    public function adminIdForEmail(string $email)
+    {
         $req = Sql_Fetch_Row_Query(sprintf(
             'select id from %s where email = "%s"',
-            $GLOBALS['tables']['admin'],
+            $this->db['admin'],
             sql_escape($email)
         ));
 
@@ -104,9 +106,9 @@ class simplesaml extends phplistPlugin
      *
      * @return true if super-admin false if not
      */
-    public function isSuperUser($id)
+    public function isSuperUser(int $id): bool
     {
-        $req = Sql_Fetch_Row_Query(sprintf('select superuser from %s where id = %d', $GLOBALS['tables']['admin'], $id));
+        $req = Sql_Fetch_Row_Query(sprintf('select superuser from %s where id = %d', $this->db['admin'], $id));
 
         return $req[0];
     }
@@ -117,15 +119,13 @@ class simplesaml extends phplistPlugin
      * Return array of admins in the system
      * Used in the list page to allow assigning ownership to lists
      *
-     * @param none
-     *
      * @return array of admins
      *               id => name
      */
     public function listAdmins()
     {
         $result = array();
-        $req = Sql_Query("select id,loginname from {$GLOBALS['tables']['admin']} order by loginname");
+        $req = Sql_Query("select id,loginname from {$this->db['admin']} order by loginname");
         while ($row = Sql_Fetch_Array($req)) {
             $result[$row['id']] = $row['loginname'];
         }
@@ -134,25 +134,25 @@ class simplesaml extends phplistPlugin
     }
 
     /**
-     * 
+     *
      * validateAccount, verify that the logged in admin is still valid
-     * 
+     *
      * this allows verification that the admin still exists and is valid
-     * 
+     *
      * @param int $id the ID of the admin as provided by validateLogin
-     * 
-     * @return array 
+     *
+     * @return array
      *    index 0 -> false if failed, true if successful
      *    index 1 -> error message when validation fails
-     * 
-     * eg 
+     *
+     * eg
      *    return array(1,'OK'); // -> admin valid
      *    return array(0,'No such account'); // admin failed
-     * 
+     *
      */
-    public function validateAccount($id)
+    public function validateAccount($id): array
     {
-        $query = sprintf('select id, disabled,password from %s where id = %d', $GLOBALS['tables']['admin'], $id);
+        $query = sprintf('select id, disabled,password from %s where id = %d', $this->db['admin'], $id);
         $data = Sql_Fetch_Row_Query($query);
         if (!$data[0]) {
             return array(0, s('No such account'));
@@ -162,7 +162,7 @@ class simplesaml extends phplistPlugin
 
         //# do this separately from above, to avoid lock out when the DB hasn't been upgraded.
         //# so, ignore the error
-        $query = sprintf('select privileges from %s where id = %d', $GLOBALS['tables']['admin'], $id);
+        $query = sprintf('select privileges from %s where id = %d', $this->db['admin'], $id);
         $req = Sql_Query($query);
         if ($req) {
             $data = Sql_Fetch_Row($req);
@@ -181,12 +181,12 @@ class simplesaml extends phplistPlugin
     /**
      * login
      * called on login
-     * @param none
-     * @return true when user is successfully logged by plugin, false instead
+     *
+     * @return bool true when user is successfully logged by plugin, false instead
      */
-    public function login()
+    public function login(): bool
     {
-        $as = new \SimpleSAML\Auth\Simple('default-sp');
+        $as = new Simple('default-sp');
         $as->requireAuth();
         if ($as->isAuthenticated()) {
             $user = [
@@ -197,14 +197,17 @@ class simplesaml extends phplistPlugin
                 "attributes" => $as->getAttributes(),
             ];
             $privileges = null;
-            $login = $user['nameId'];
+            $login = $user['attributes']['username'][0];
+            $email = $user['attributes']['email'][0];
             $superuser = 1;
 
-            // see if there is an existing record
-            $admindata = Sql_Fetch_Assoc_Query(sprintf('select loginname,password,disabled,id,superuser,privileges from %s where loginname="%s"', $GLOBALS["tables"]["admin"], addslashes($login)));
-            // if not found, then we create it
+            $admindata = Sql_Fetch_Assoc_Query(sprintf(
+                'select loginname,password,disabled,id,superuser,privileges from %s where loginname="%s"',
+                $this->db['admin'],
+                addslashes($login))
+            );
+
             if (!$admindata) {
-                // create a new record
                 if (!$privileges) {
                     $privileges = serialize([
                         'subscribers' => true,
@@ -214,18 +217,26 @@ class simplesaml extends phplistPlugin
                     ]);
                 }
 
-                Sql_Query(sprintf(
-                    'insert into %s (loginname,namelc,created,privileges,superuser) values("%s","%s",now(),"%s", "%d")',
-                    $GLOBALS["tables"]["admin"],
+                $userCreated = Sql_Query(sprintf(
+                    'insert into %s (loginname,email,namelc,created,privileges,superuser) values("%s","%s","%s",now(),"%s", "%d")',
+                    $this->db['admin'],
                     addslashes($login),
+                    sql_escape($email),
                     strtolower(addslashes($login)),
                     sql_escape($privileges),
                     $superuser
                 ));
-                $admindata = Sql_Fetch_Assoc_Query(sprintf('select password,disabled,id from %s where loginname = "%s"', $GLOBALS["tables"]["admin"], addslashes($login)));
+                $admindata = Sql_Fetch_Assoc_Query(sprintf(
+                    'select loginname,password,disabled,id,superuser,privileges from %s where loginname="%s"',
+                    $this->db['admin'],
+                    addslashes($login)
+                ));
+                if ($user['nameId'] && !$userCreated || !$admindata) {
+                    return false;
+                }
             }
 
-            $session = \SimpleSAML\Session::getSessionFromRequest();
+            $session = Session::getSessionFromRequest();
             $session->cleanup();
 
             $_SESSION['adminloggedin'] = $GLOBALS['remoteAddr'];
@@ -234,6 +245,10 @@ class simplesaml extends phplistPlugin
                 'id' => $admindata['id'],
                 'superuser' => $admindata['superuser']
             ];
+
+            Sql_Query(sprintf('insert into %s (moment,adminid,remote_ip4,remote_ip6,sessionid,active) 
+                values(%d,%d,"%s","%s","%s",1)',
+                $this->db['admin_login'],time(),$admindata['id'],getClientIP(),"",session_id()));
 
             if ($admindata['privileges']) {
                 $_SESSION['privileges'] = unserialize($admindata['privileges']);
@@ -246,14 +261,13 @@ class simplesaml extends phplistPlugin
     /**
      * logout
      * called on logout
-     * @param none
      * @return null
      */
     public function logout()
     {
         $_SESSION['logindetails'] = NULL;
         $_SESSION['adminloggedin'] = NULL;
-        // unset cookies
+
         if (isset($_SERVER['HTTP_COOKIE'])) {
             $cookies = explode(';', $_SERVER['HTTP_COOKIE']);
             foreach ($cookies as $cookie) {
@@ -263,28 +277,30 @@ class simplesaml extends phplistPlugin
                 setcookie($name, '', time() - 1000, '/');
             }
         }
-        //destroy the session
+
         session_destroy();
+        HTTP::setCookie('SimpleSAMLAuthToken', '', ['expires' => time() - 3600]);
+        HTTP::setCookie('AUTH_SESSION_ID', '', ['expires' => time() - 3600, 'path' => '/realms/master']);
+        HTTP::setCookie('KEYCLOAK_SESSION', '', ['expires' => time() - 3600, 'path' => '/realms/master/']);
+        HTTP::setCookie('KEYCLOAK_IDENTITY', '', ['expires' => time() - 3600, 'path' => '/realms/master/']);
         header('Location: ' . $_SERVER['HTTP_REFERER']);
     }
 
-    public function dependencyCheck()
+    public function dependencyCheck(): array
     {
-        if ( version_compare(PHP_VERSION, '7.4.0') < 0) {
-                return array('PHP version 7.4 or up'  => false);
+        if (version_compare(PHP_VERSION, '7.4.0') < 0) {
+            return ['PHP version 7.4 or up'  => false];
         }
 
         $allowEnable = false;
         if (@is_file(__DIR__).'/simplesaml/simplesamlphp/config/config.php') {
-          include __DIR__.'/simplesaml/simplesamlphp/config/config.php';
-          $allowEnable = $config['secretsalt'] != 'defaultsecretsalt' && 
-            $config['auth.adminpassword'] != '123'
-          ;
+            include __DIR__.'/simplesaml/simplesamlphp/config/config.php';
+            $allowEnable = $config['secretsalt'] != 'defaultsecretsalt1' && $config['auth.adminpassword'] != '1234';
         }
 
-        return array(
+        return [
             'Simplesaml Configured' => $allowEnable,
             'phpList version 3.6.7 or later' => version_compare(VERSION, '3.6.7') >= 0,
-        );
+        ];
     }
 }
