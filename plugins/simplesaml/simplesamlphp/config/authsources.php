@@ -17,23 +17,23 @@ $config = [
     'admin' => [
         // The default is to use core:AdminPassword, but it can be replaced with
         // any authentication source.
-
         'core:AdminPassword',
     ],
-
 
     // An authentication source which can authenticate against SAML 2.0 IdPs.
     'default-sp' => [
         'saml:SP',
-        'RelayState' => 'http://phplist.test/lists/admin/',
+        'privatekey' => 'saml-private-key.pem',
+        'certificate' => 'saml-certificate.pem',
+        'redirect.sign' => true,
 
         // The entity ID of this SP.
         // Can be NULL/unset, in which case an entity ID is generated based on the metadata URL.
-        'entityID' => 'account',
+        'entityID' => 'phplist',
 
         // The entity ID of the IdP this SP should contact.
         // Can be NULL/unset, in which case the user will be shown a list of available IdPs.
-        'idp' => 'https://sso.phplist.com:8443/auth/realms/master',
+        'idp' => 'https://sso.phplist.com:8443/realms/master',
 
         // The URL to the discovery service.
         // Can be NULL/unset, in which case a builtin discovery service will be used.

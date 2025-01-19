@@ -260,7 +260,7 @@ class Session implements \Serializable, Utils\ClearableState
         // check if we have stored a session stored with the session handler
         try {
             /** @var \SimpleSAML\Session|null $session  Help Scrutinizer with the correct type */
-            $session = self::getSession();
+            $session = self::getSession($_COOKIE['phpListSession'] ?? null);
         } catch (\Exception $e) {
             /*
              * For some reason, we were unable to initialize this session. Note that this error might be temporary, and
@@ -343,6 +343,14 @@ class Session implements \Serializable, Utils\ClearableState
 
         if (array_key_exists($sessionId, self::$sessions)) {
             return self::$sessions[$sessionId];
+        }
+
+        if (isset($_SESSION['SimpleSAMLphp_SESSION'])) {
+            $session = unserialize($_SESSION['SimpleSAMLphp_SESSION']);
+
+            if ($session instanceof self) {
+                return $session;
+            }
         }
 
         $session = $sh->loadSession($sessionId);
@@ -651,7 +659,6 @@ class Session implements \Serializable, Utils\ClearableState
         $this->authData[$authority] = $data;
 
         $this->authToken = Utils\Random::generateID();
-        $sessionHandler = SessionHandler::getSessionHandler();
 
         if (
             !$this->transient
@@ -664,8 +671,7 @@ class Session implements \Serializable, Utils\ClearableState
             try {
                 Utils\HTTP::setCookie(
                     self::$config->getString('session.authtoken.cookiename', 'SimpleSAMLAuthToken'),
-                    $this->authToken,
-                    $sessionHandler->getCookieParams()
+                    session_id()
                 );
             } catch (Error\CannotSetCookie $e) {
                 /*

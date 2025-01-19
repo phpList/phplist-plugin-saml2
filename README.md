@@ -46,7 +46,7 @@ $config = [
        'entityID' => 'account',
        // The entity ID of the IdP this SP should contact.
        // Can be NULL/unset, in which case the user will be shown a list of available IdPsnt.
-       'idp' => 'https://sso.phplist.com:8443/auth/realms/master',
+       'idp' => 'https://sso.phplist.com:8443/realms/master',
        'baseurlpath' => 'https://saml.phplist.test/',
        'RelayState' => 'http://phplist.test/lists/admin',
        'NameIDPolicy' => [
@@ -103,9 +103,9 @@ The `saml20-idp-remote.php` file should look like :
 
    //...
    //...
-$metadata['https://sso.phplist.com:8443/auth/realms/master'] = [
-    'SingleSignOnService'  => 'https://sso.phplist.com:8443/auth/realms/master/protocol/saml',
-    'SingleLogoutService'  => 'https://sso.phplist.com:8443/auth/realms/master/protocol/saml',
+$metadata['https://sso.phplist.com:8443/realms/master'] = [
+    'SingleSignOnService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
+    'SingleLogoutService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
     'certData' => 'CERT_STRING_',
 ];
 ```
