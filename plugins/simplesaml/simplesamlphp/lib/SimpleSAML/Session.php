@@ -48,7 +48,7 @@ class Session implements \Serializable, Utils\ClearableState
      *
      * Warning: do not set the instance manually, call Session::load() instead.
      *
-     * @var \SimpleSAML\Session|null
+     * @var Session|null
      */
     private static $instance = null;
 
@@ -268,11 +268,11 @@ class Session implements \Serializable, Utils\ClearableState
         if (isset(self::$instance)) {
             return self::$instance;
         }
-
+        $sessionId = filter_input(INPUT_COOKIE, 'phpListSession');
         // check if we have stored a session stored with the session handler
         try {
-            /** @var \SimpleSAML\Session|null $session  Help Scrutinizer with the correct type */
-            $session = self::getSession($_COOKIE['phpListSession'] ?? null);
+            /** @var Session|null $session  Help Scrutinizer with the correct type */
+            $session = self::getSession($sessionId);
         } catch (\Exception $e) {
             /*
              * For some reason, we were unable to initialize this session. Note that this error might be temporary, and
@@ -325,7 +325,7 @@ class Session implements \Serializable, Utils\ClearableState
         }
 
         // we must have a session now, either regular or transient
-        /** @var \SimpleSAML\Session */
+        /** @var Session */
         return self::$instance;
     }
 
@@ -334,7 +334,7 @@ class Session implements \Serializable, Utils\ClearableState
      *
      * @param string|null $sessionId The session we should get, or null to get the current session.
      *
-     * @return \SimpleSAML\Session|null The session that is stored in the session handler,
+     * @return Session|null The session that is stored in the session handler,
      *   or null if the session wasn't found.
      */
     public static function getSession($sessionId = null)
@@ -357,12 +357,10 @@ class Session implements \Serializable, Utils\ClearableState
             return self::$sessions[$sessionId];
         }
 
-        if (isset($_SESSION['SimpleSAMLphp_SESSION'])) {
-            $session = unserialize($_SESSION['SimpleSAMLphp_SESSION']);
+        $session = SessionHandlerStore::getSessionHandler()->loadSession();
 
-            if ($session instanceof self) {
-                return $session;
-            }
+        if ($session instanceof self) {
+            return $session;
         }
 
         $session = $sh->loadSession($sessionId);
@@ -413,8 +411,8 @@ class Session implements \Serializable, Utils\ClearableState
      *
      * Warning: never set self::$instance yourself, call this method instead.
      *
-     * @param \SimpleSAML\Session $session The session to load.
-     * @return \SimpleSAML\Session The session we just loaded, just for convenience.
+     * @param Session $session The session to load.
+     * @return Session The session we just loaded, just for convenience.
      */
     private static function load(Session $session): Session
     {
