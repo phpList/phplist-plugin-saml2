@@ -210,6 +210,18 @@ class Session implements \Serializable, Utils\ClearableState
         return serialize(get_object_vars($this));
     }
 
+    public function __serialize(): array
+    {
+        return get_object_vars($this);
+    }
+
+    public function __unserialize(array $data): void
+    {
+        foreach ($data as $k => $v) {
+            $this->$k = $v;
+        }
+    }
+
     /**
      * Unserialize a session object and load it..
      *
@@ -659,6 +671,7 @@ class Session implements \Serializable, Utils\ClearableState
         $this->authData[$authority] = $data;
 
         $this->authToken = Utils\Random::generateID();
+        $sessionHandler = SessionHandler::getSessionHandler();
 
         if (
             !$this->transient
@@ -671,8 +684,10 @@ class Session implements \Serializable, Utils\ClearableState
             try {
                 Utils\HTTP::setCookie(
                     self::$config->getString('session.authtoken.cookiename', 'SimpleSAMLAuthToken'),
-                    session_id()
+                    $this->authToken,
+                    $sessionHandler->getCookieParams()
                 );
+                Utils\HTTP::setCookie('phpListSession',session_id());
             } catch (Error\CannotSetCookie $e) {
                 /*
                  * Something went wrong when setting the auth token. We cannot recover from this, so we better log a
