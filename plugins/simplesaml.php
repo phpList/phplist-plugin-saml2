@@ -295,7 +295,7 @@ class simplesaml extends phplistPlugin
         $allowEnable = false;
         if (@is_file(__DIR__).'/simplesaml/simplesamlphp/config/config.php') {
             include __DIR__.'/simplesaml/simplesamlphp/config/config.php';
-            $allowEnable = $config['secretsalt'] != 'defaultsecretsalt1' && $config['auth.adminpassword'] != '1234';
+            $allowEnable = $config['secretsalt'] != 'defaultsecretsalt' && $config['auth.adminpassword'] != '123';
         }
 
         return [

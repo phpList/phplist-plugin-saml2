@@ -8,8 +8,6 @@
  * See: https://simplesamlphp.org/docs/stable/simplesamlphp-reference-idp-remote
  */
 $metadata['https://sso.phplist.com:8443/realms/master'] = [
-    'SingleSignOnService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
-    'SingleLogoutService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
     'SingleSignOnService' => [
         [
             'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
