@@ -29,7 +29,6 @@ class simplesaml extends phplistPlugin
         ]
     ];
 
-    private array $db;
     private array $config;
 
     function __construct()
@@ -38,7 +37,7 @@ class simplesaml extends phplistPlugin
             require_once(__DIR__ . '/simplesaml/simplesamlphp/lib/_autoload.php');
         }
         parent::__construct();
-        $this->db = $GLOBALS['tables'];
+        $this->tables = $GLOBALS['tables'];
         $this->config = $GLOBALS['config'];
     }
 
@@ -55,7 +54,7 @@ class simplesaml extends phplistPlugin
      */
     public function adminName($id)
     {
-        $req = Sql_Fetch_Row_Query(sprintf('select loginname from %s where id = %d', $this->db['admin'], $id));
+        $req = Sql_Fetch_Row_Query(sprintf('select loginname from %s where id = %d', $this->tables['admin'], $id));
 
         return $req[0] ? $req[0] : s('Nobody');
     }
@@ -72,7 +71,7 @@ class simplesaml extends phplistPlugin
      */
     public function adminEmail($id): string
     {
-        $req = Sql_Fetch_Row_Query(sprintf('select email from %s where id = %d', $this->db['admin'], $id));
+        $req = Sql_Fetch_Row_Query(sprintf('select email from %s where id = %d', $this->tables['admin'], $id));
 
         return $req[0] ? $req[0] : '';
     }
@@ -90,7 +89,7 @@ class simplesaml extends phplistPlugin
     {
         $req = Sql_Fetch_Row_Query(sprintf(
             'select id from %s where email = "%s"',
-            $this->db['admin'],
+            $this->tables['admin'],
             sql_escape($email)
         ));
 
@@ -108,7 +107,7 @@ class simplesaml extends phplistPlugin
      */
     public function isSuperUser(int $id): bool
     {
-        $req = Sql_Fetch_Row_Query(sprintf('select superuser from %s where id = %d', $this->db['admin'], $id));
+        $req = Sql_Fetch_Row_Query(sprintf('select superuser from %s where id = %d', $this->tables['admin'], $id));
 
         return $req[0];
     }
@@ -125,7 +124,7 @@ class simplesaml extends phplistPlugin
     public function listAdmins()
     {
         $result = array();
-        $req = Sql_Query("select id,loginname from {$this->db['admin']} order by loginname");
+        $req = Sql_Query("select id,loginname from {$this->tables['admin']} order by loginname");
         while ($row = Sql_Fetch_Array($req)) {
             $result[$row['id']] = $row['loginname'];
         }
@@ -152,7 +151,7 @@ class simplesaml extends phplistPlugin
      */
     public function validateAccount($id): array
     {
-        $query = sprintf('select id, disabled,password from %s where id = %d', $this->db['admin'], $id);
+        $query = sprintf('select id, disabled,password from %s where id = %d', $this->tables['admin'], $id);
         $data = Sql_Fetch_Row_Query($query);
         if (!$data[0]) {
             return array(0, s('No such account'));
@@ -162,7 +161,7 @@ class simplesaml extends phplistPlugin
 
         //# do this separately from above, to avoid lock out when the DB hasn't been upgraded.
         //# so, ignore the error
-        $query = sprintf('select privileges from %s where id = %d', $this->db['admin'], $id);
+        $query = sprintf('select privileges from %s where id = %d', $this->tables['admin'], $id);
         $req = Sql_Query($query);
         if ($req) {
             $data = Sql_Fetch_Row($req);
@@ -203,7 +202,7 @@ class simplesaml extends phplistPlugin
 
             $admindata = Sql_Fetch_Assoc_Query(sprintf(
                 'select loginname,password,disabled,id,superuser,privileges from %s where loginname="%s"',
-                $this->db['admin'],
+                $this->tables['admin'],
                 addslashes($login))
             );
 
@@ -219,7 +218,7 @@ class simplesaml extends phplistPlugin
 
                 $userCreated = Sql_Query(sprintf(
                     'insert into %s (loginname,email,namelc,created,privileges,superuser) values("%s","%s","%s",now(),"%s", "%d")',
-                    $this->db['admin'],
+                    $this->tables['admin'],
                     addslashes($login),
                     sql_escape($email),
                     strtolower(addslashes($login)),
@@ -228,7 +227,7 @@ class simplesaml extends phplistPlugin
                 ));
                 $admindata = Sql_Fetch_Assoc_Query(sprintf(
                     'select loginname,password,disabled,id,superuser,privileges from %s where loginname="%s"',
-                    $this->db['admin'],
+                    $this->tables['admin'],
                     addslashes($login)
                 ));
                 if ($user['nameId'] && !$userCreated || !$admindata) {
@@ -248,7 +247,7 @@ class simplesaml extends phplistPlugin
 
             Sql_Query(sprintf('insert into %s (moment,adminid,remote_ip4,remote_ip6,sessionid,active) 
                 values(%d,%d,"%s","%s","%s",1)',
-                $this->db['admin_login'],time(),$admindata['id'],getClientIP(),"",session_id()));
+                $this->tables['admin_login'],time(),$admindata['id'],getClientIP(),"",session_id()));
 
             if ($admindata['privileges']) {
                 $_SESSION['privileges'] = unserialize($admindata['privileges']);
