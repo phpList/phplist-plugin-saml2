@@ -14,22 +14,27 @@ class simplesaml extends phplistPlugin
     public $version = '0.1';
     public $authors = 'Fon E. Noel Nfebe, Michiel Dethmers';
     public $enabled = 0;
+    public $ssoProvider = true;
     public $authProvider = true;
     public $description = 'Login to phpList with SAML';
     public $documentationUrl = 'https://resources.phplist.com/plugin/simplesaml';
+    public $autUrl = 'sso';
     public $settings = [
-        'simplesaml_option1' => [
-            'value' => 0,
-            'description' => 'Some config value',
-            'type' => 'integer',
+        'display_name' => [
+            'value' => 'Saml',
+            'description' => 'SSO display name',
+            'type' => 'string',
             'allowempty' => 0,
-            'min' => 0,
-            'max' => 999999,
             'category' => 'SSO config',
-        ]
+        ],
+        'hide_default_login' => [
+            'value' => false,
+            'description' => 'Hide default login option',
+            'type' => 'boolean',
+            'allowempty' => 0,
+            'category' => 'SSO config',
+        ],
     ];
-
-    private array $config;
 
     function __construct()
     {
@@ -38,7 +43,6 @@ class simplesaml extends phplistPlugin
         }
         parent::__construct();
         $this->tables = $GLOBALS['tables'];
-        $this->config = $GLOBALS['config'];
     }
 
     /**
