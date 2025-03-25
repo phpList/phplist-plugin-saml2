@@ -1,5 +1,7 @@
 <?php
 
+$settings = include __DIR__ . '/../../settings.php';
+
 $config = [
     /*
      * When multiple authentication sources are defined, you can specify one to use by default
@@ -29,11 +31,11 @@ $config = [
 
         // The entity ID of this SP.
         // Can be NULL/unset, in which case an entity ID is generated based on the metadata URL.
-        'entityID' => 'phplisttest',
+        'entityID' => $settings['saml_entity_id'] ?? 'phplist',
 
         // The entity ID of the IdP this SP should contact.
         // Can be NULL/unset, in which case the user will be shown a list of available IdPs.
-        'idp' => 'https://sso.phplist.com:8443/realms/master',
+        'idp' => $settings['saml_idp'] ?? 'https://sso.phplist.com:8443/realms/phplist',
 
         // The URL to the discovery service.
         // Can be NULL/unset, in which case a builtin discovery service will be used.

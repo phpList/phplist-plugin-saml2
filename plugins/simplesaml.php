@@ -19,23 +19,59 @@ class simplesaml extends phplistPlugin
     public $description = 'Login to phpList with SAML';
     public $documentationUrl = 'https://resources.phplist.com/plugin/simplesaml';
     public $autUrl = 'sso';
+    public const CONFIG_CATEGORY = 'SSO config';
     public $settings = [
         'display_name' => [
             'value' => 'Saml',
             'description' => 'SSO display name',
-            'type' => 'string',
+            'type' => 'text',
             'allowempty' => 0,
-            'category' => 'SSO config',
+            'category' => self::CONFIG_CATEGORY,
         ],
         'hide_default_login' => [
             'value' => false,
             'description' => 'Hide default login option',
             'type' => 'boolean',
             'allowempty' => 0,
-            'category' => 'SSO config',
+            'category' => self::CONFIG_CATEGORY
+        ],
+        'saml_idp' => [
+            'value' => 'https://sso.phplist.com:8443/realms/master',
+            'description' => 'Idp of the SAML provider',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
+        ],
+        'saml_entity_id' => [
+            'value' => 'phplisttest',
+            'description' => 'SAML client id',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
+        ],
+        'saml_trusted_url_domains' => [
+            'value' => 'localhost',
+            'description' => 'SAML trusted url domains',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
+        ],
+        'saml_session_cookie_domain' => [
+            'value' => '.localhost',
+            'description' => 'SAML session cookie domains',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
+        ],
+        'saml_session_savepath' => [
+            'value' => '/var/lib/php/sessions',
+            'description' => 'SAML session savepath',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
         ],
     ];
-
+    private const SETTINGS_FILE_NAME= 'settings.php';
     function __construct()
     {
         if ( version_compare(PHP_VERSION, '7.4.0') >= 0) {
@@ -43,6 +79,13 @@ class simplesaml extends phplistPlugin
         }
         parent::__construct();
         $this->tables = $GLOBALS['tables'];
+        $filename = __DIR__ . '/simplesaml/' . self::SETTINGS_FILE_NAME;
+        $dataToWrite = [];
+        foreach ($this->settings as $key => $setting) {
+            $dataToWrite[$key] = !empty(getConfig($key)) ? getConfig($key) : $setting['value'];
+            $this->settings[$key]['value'] = $dataToWrite[$key];
+        }
+        file_put_contents($filename, "<?php\n\nreturn " . var_export($dataToWrite, true) . ";\n");
     }
 
     /**
