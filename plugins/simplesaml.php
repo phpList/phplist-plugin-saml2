@@ -63,9 +63,23 @@ class simplesaml extends phplistPlugin
             'allowempty' => 0,
             'category' => self::CONFIG_CATEGORY,
         ],
-        'saml_session_savepath' => [
+        'saml_session_save_path' => [
             'value' => '/var/lib/php/sessions',
-            'description' => 'SAML session savepath',
+            'description' => 'SAML session save path',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
+        ],
+        'saml_secret_salt' => [
+            'value' => 'defaultsecretsalt',
+            'description' => 'Secret salt used by SimpleSAMLphp',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
+        ],
+        'saml_admin_password' => [
+            'value' => '123',
+            'description' => 'Saml admin password hash',
             'type' => 'text',
             'allowempty' => 0,
             'category' => self::CONFIG_CATEGORY,
@@ -83,9 +97,16 @@ class simplesaml extends phplistPlugin
         $dataToWrite = [];
         foreach ($this->settings as $key => $setting) {
             $dataToWrite[$key] = !empty(getConfig($key)) ? getConfig($key) : $setting['value'];
-            $this->settings[$key]['value'] = $dataToWrite[$key];
         }
+        $this->settings['display_name']['value'] = $dataToWrite['display_name'];
+
         file_put_contents($filename, "<?php\n\nreturn " . var_export($dataToWrite, true) . ";\n");
+        if ($this->settings['saml_secret_salt']['value'] == getConfig('saml_secret_salt')) {
+            Error($GLOBALS['I18N']->get('Please change saml secret salt').'<br/>');
+        }
+        if ($this->settings['saml_admin_password']['value'] == getConfig('saml_admin_password')) {
+            Error($GLOBALS['I18N']->get('Please change saml admin password').'<br/>');
+        }
     }
 
     /**
@@ -334,19 +355,6 @@ class simplesaml extends phplistPlugin
 
     public function dependencyCheck(): array
     {
-        if (version_compare(PHP_VERSION, '7.4.0') < 0) {
-            return ['PHP version 7.4 or up'  => false];
-        }
-
-        $allowEnable = false;
-        if (@is_file(__DIR__).'/simplesaml/simplesamlphp/config/config.php') {
-            include __DIR__.'/simplesaml/simplesamlphp/config/config.php';
-            $allowEnable = $config['secretsalt'] != 'defaultsecretsalt' && $config['auth.adminpassword'] != '123';
-        }
-
-        return [
-            'Simplesaml Configured' => $allowEnable,
-            'phpList version 3.6.7 or later' => version_compare(VERSION, '3.6.7') >= 0,
-        ];
+        return ['PHP version 7.4 or up'  => version_compare(PHP_VERSION, '7.4.0') >= 0];
     }
 }
