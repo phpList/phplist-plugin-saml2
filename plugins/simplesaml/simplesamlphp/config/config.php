@@ -5,6 +5,7 @@
  */
 
 $httpUtils = new \SimpleSAML\Utils\HTTP();
+$settings = include __DIR__ . '/../../settings.php';
 
 $config = [
 
@@ -176,7 +177,7 @@ $config = [
      * Example:
      *   'trusted.url.domains' => ['sp.example.com', 'app.example.com'],
      */
-    'trusted.url.domains' => ['phplist.test', 'localhost'],
+    'trusted.url.domains' => [$settings['saml_trusted_url_domains'] ?? 'phplist.com'],
     'assertion.allowedClockSkew' => 1800, // Tolerance in seconds (e.g., 3 minutes)
 
     /*
@@ -546,7 +547,7 @@ $config = [
      * Example:
      *  'session.cookie.domain' => '.example.org',
      */
-    'session.cookie.domain' => '.localhost',
+    'session.cookie.domain' => $settings['saml_session_cookie_domain'] ?? '.phplist.com',
 
     /*
      * Set the secure flag in the cookie.
@@ -573,7 +574,7 @@ $config = [
      * Options to override the default settings for php sessions.
      */
     'session.phpsession.cookiename' => 'SimpleSAML',
-    'session.phpsession.savepath' => '/var/lib/php/sessions',
+    'session.phpsession.savepath' => $settings['saml_session_savepath'] ?? '/var/lib/php/sessions',
     'session.phpsession.httponly' => true,
 
     /*
@@ -1107,7 +1108,7 @@ $config = [
      * The default datastore is 'phpsession'.
      */
     'store.type'                    => 'phpsession',
-    'session.cookie_domain' => '.localhost',
+    'session.cookie_domain' => $settings['saml_session_cookie_domain'] ?? '.localhost',
     'session.cookie_path' => '/',
     'session.cookie_secure' => false,
 //    'store.type' => 'redis',
