@@ -10,7 +10,7 @@ use SimpleSAML\Utils\HTTP;
 class simplesaml extends phplistPlugin
 {
     public $name = 'simplesaml';
-    public $coderoot =  'simplesaml';
+    public $coderoot = 'simplesaml';
     public $version = '0.1';
     public $authors = 'Fon E. Noel Nfebe, Michiel Dethmers';
     public $enabled = 0;
@@ -21,9 +21,9 @@ class simplesaml extends phplistPlugin
     public $autUrl = 'sso';
     public const CONFIG_CATEGORY = 'SSO config';
     public $settings = [
-        'display_name' => [
+        'simplesaml' => [
             'value' => 'Saml',
-            'description' => 'SSO display name',
+            'description' => 'Saml display name',
             'type' => 'text',
             'allowempty' => 0,
             'category' => self::CONFIG_CATEGORY,
@@ -45,6 +45,13 @@ class simplesaml extends phplistPlugin
         'saml_entity_id' => [
             'value' => 'phplisttest',
             'description' => 'SAML client id',
+            'type' => 'text',
+            'allowempty' => 0,
+            'category' => self::CONFIG_CATEGORY,
+        ],
+        'saml_realm' => [
+            'value' => 'master',
+            'description' => 'SAML realm name',
             'type' => 'text',
             'allowempty' => 0,
             'category' => self::CONFIG_CATEGORY,
@@ -94,18 +101,22 @@ class simplesaml extends phplistPlugin
         parent::__construct();
         $this->tables = $GLOBALS['tables'];
         $filename = __DIR__ . '/simplesaml/' . self::SETTINGS_FILE_NAME;
+
         $dataToWrite = [];
         foreach ($this->settings as $key => $setting) {
             $dataToWrite[$key] = !empty(getConfig($key)) ? getConfig($key) : $setting['value'];
         }
-        $this->settings['display_name']['value'] = $dataToWrite['display_name'];
+        $this->settings[$this->name]['value'] = $dataToWrite[$this->name];
 
         file_put_contents($filename, "<?php\n\nreturn " . var_export($dataToWrite, true) . ";\n");
         if ($this->settings['saml_secret_salt']['value'] == getConfig('saml_secret_salt')) {
-            Error($GLOBALS['I18N']->get('Please change saml secret salt').'<br/>');
+            $GLOBALS['msg'] = ($GLOBALS['I18N']->get('Please change saml secret salt').'<br/>');
         }
         if ($this->settings['saml_admin_password']['value'] == getConfig('saml_admin_password')) {
-            Error($GLOBALS['I18N']->get('Please change saml admin password').'<br/>');
+            $GLOBALS['msg'] = ($GLOBALS['I18N']->get('Please change saml admin password').'<br/>');
+        }
+        if ($this->settings['saml_realm']['value'] == getConfig('saml_realm')) {
+            $GLOBALS['msg'] = ($GLOBALS['I18N']->get('Please configure non master realm for authentication').'<br/>');
         }
     }
 
@@ -269,9 +280,9 @@ class simplesaml extends phplistPlugin
             $superuser = 1;
 
             $admindata = Sql_Fetch_Assoc_Query(sprintf(
-                'select loginname,password,disabled,id,superuser,privileges from %s where loginname="%s"',
-                $this->tables['admin'],
-                addslashes($login))
+                    'select loginname,password,disabled,id,superuser,privileges from %s where loginname="%s"',
+                    $this->tables['admin'],
+                    addslashes($login))
             );
 
             if (!$admindata) {
@@ -345,11 +356,13 @@ class simplesaml extends phplistPlugin
             }
         }
 
+        $path = '/realms/' . getConfig('saml_realm');
+
         session_destroy();
         HTTP::setCookie('SimpleSAMLAuthToken', '', ['expires' => time() - 3600]);
-        HTTP::setCookie('AUTH_SESSION_ID', '', ['expires' => time() - 3600, 'path' => '/realms/master']);
-        HTTP::setCookie('KEYCLOAK_SESSION', '', ['expires' => time() - 3600, 'path' => '/realms/master/']);
-        HTTP::setCookie('KEYCLOAK_IDENTITY', '', ['expires' => time() - 3600, 'path' => '/realms/master/']);
+        HTTP::setCookie('AUTH_SESSION_ID', '', ['expires' => time() - 3600, 'path' => $path]);
+        HTTP::setCookie('KEYCLOAK_SESSION', '', ['expires' => time() - 3600, 'path' => $path]);
+        HTTP::setCookie('KEYCLOAK_IDENTITY', '', ['expires' => time() - 3600, 'path' => $path]);
         header('Location: ' . $_SERVER['HTTP_REFERER']);
     }
 
