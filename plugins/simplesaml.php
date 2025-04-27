@@ -275,6 +275,7 @@ class simplesaml extends phplistPlugin
                 "attributes" => $as->getAttributes(),
             ];
             $privileges = null;
+            $fullName = trim(($user['attributes']['firstName'][0] ?? '') . ' ' . ($user['attributes']['lastName'][0] ?? ''));
             $login = $user['attributes']['username'][0];
             $email = $user['attributes']['email'][0];
             $superuser = 1;
@@ -300,7 +301,7 @@ class simplesaml extends phplistPlugin
                     $this->tables['admin'],
                     addslashes($login),
                     sql_escape($email),
-                    strtolower(addslashes($login)),
+                    $fullName,
                     sql_escape($privileges),
                     $superuser
                 ));
