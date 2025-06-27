@@ -1,34 +1,28 @@
 # phpList simpleSAML Plugin
 
-SimpleSaml plugin for phpList
+Saml2 plugin for phpList
 
 ## Plugin Setup
 
 After `cd`-ing into the configured phpList plugin directory:
 
-1) `git clone https://github.com/phpList/phplist-plugin-simplesaml.git`
+1) `git clone git@github.com:phpList/phplist-plugin-saml2.git`
 
 ## Configuration
 
-In `phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp` the following directories should be present.
+### You can configure saml from the phplist configuration page "SSO config" category (except for certificate which should be added manually in the cert folder)
+you will need to give write permission to the simplesaml/settings.php file
 
-- `config`
-- `metadata`
+https://resources.phplist.com/plugin/simplesaml#simplesamlphp_installation_check
 
-If not, you want to:
-
-- `cd phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp`
-- `cp -r config-templates config`
-- `cp -r metadata-templates metadata`
-
-* **In [phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp/config/authsources.php] the following parameters have to be set:**
+* **In [phplist-plugin-saml2/plugins/simplesaml/simplesamlphp/config/authsources.php] the following parameters will to be set:**
 
 - **`entityID`**: The `entityID` is essentially the client ID which is specified in Keycloak or IDP
 - **`idp`**: The IDP is the identifier for the IdP (Keycloak) which simplesaml would connect to.
 - **`RelayState`**: The `RelayState` specifies where `simplesamlphp` should redirect to after a successful authentication. Basically it's like a callback url. This should simply be the URL from which the authentication started. Hence, a 'redirect back'.
 - **`NameIDPolicy`**: The IdP is expected to return a `NameID` every successful auth session, this name ID is what identifies the user. Depending on the IdP this `NameID` might change every session. That makes it impossible to tract the user across session. So we have to said the `NameIDPolicy` to `persistent` essentially telling the IdP to send the same `NameID` all the time for the same user.
 
-The`authsources.php` should look like:
+The`authsources.php` will look like (values set automatically from configuration):
 
 ```php
 <?php
@@ -63,13 +57,13 @@ $config = [
 ];
 ```
 
-- **In [phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp/config/config.php] the following parameters have to be set:**
+- **In [phplist-plugin-saml2/plugins/simplesaml/simplesamlphp/config/config.php] the following parameters will be set:**
 
 * **`baseurlpath`**: The `baseurlpath` refers to the base url the running `SimpleSAML` configuration. Depending on where simplesaml was installed, it could be a separate domain such as `phplist.com/simplesamlphp/www` or a path like `phplist.com/admin/simplesamlphp/www`.
 
 _**NB:** The baseurlpath (which is essentially the simplesaml installation) is where the IdP returns the SAML response after a successful login. The SAML request would then be parsed and simplesamlphp would redirect back to the phplist url that sent the request or the one set via the `RelayState` property in the config array of `authsources.php`_ within the config dir.
 
-The `config.php` should look like:
+The `config.php` will look like:
 
 ```php
 <?php
@@ -85,7 +79,7 @@ $config = [
 ];
 ```
 
-- **In [phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp/metadata/saml20-idp-remote.php] metadata about the IdP has to be provided:**
+- **In [phplist-plugin-saml2/plugins/saml2/simplesamlphp/metadata/saml20-idp-remote.php] metadata about the IdP will be provided:**
 
 * **Metadata array**: The metadata should be assigned to `$metadata['id']` (where id is the idp identifier passed to `idp` paramater in the config above!)
 * **SingleSignOnService**: The keycloak endpoint to send login requests to.
@@ -110,31 +104,28 @@ $metadata['https://sso.phplist.com:8443/realms/master'] = [
 ];
 ```
 
-2) Set up `phplist.domain/simplesamlphp` to point to `phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp`
+certData will be taken from the cert/saml-remote-idp.crt file (you should add a certificate there, it will not be set from configuration page as other values are)
+
+2) Set up `phplist.domain/simplesamlphp` to point to `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp`
 
 
 ## Ways to configure 2) above:
 
-* **VERY SIMPLE: ** After following the steps in the configuration phase above, simply copy the contents of `phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp` to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp`. OR;
-* A symlink from `phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp` to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp` should work. OR; 
-* Server configuration to pass traffic from `phplist.domain/simplesamlphp` to `phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp`. 
+* **VERY SIMPLE: ** After following the steps in the configuration phase above, simply copy the contents of `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp` to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp`. OR;
+* A symlink from `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp` to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp` should work. OR; 
+* Server configuration to pass traffic from `phplist.domain/simplesamlphp` to `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp`. 
 
 
 Notes: The symlink method would not work in docker and the "VERY SIMPLE" method creates some redundancy. However the goal is that, by whatever means `phplist.domain/simplesamlphp` points to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp`. 
 
 You might be required to manually create a `log` directory inside `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp` with write permissions granted, so: `mkdir log && sudo chmod -R a+rwx log`
 
-**NB**: `simplesamlphp` **MUST BE CONFIGURED ON SAME DOMAIN** as your phplist installation. Hence `phplist.domain/simplesamlphp` SHOULD point to `phplist-plugin-simplesaml/plugins/simplesaml/simplesamlphp`. 
+**NB**: `simplesamlphp` **MUST BE CONFIGURED ON SAME DOMAIN** as your phplist installation. Hence `phplist.domain/simplesamlphp` SHOULD point to `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp`. 
 
 
 # UPDATING SimpleSAMLPHP [Developer Instructions]
 
-- Download new version of `simplesamlphp` from their [official website](https://simplesamlphp.org/download/)
-- Unzip it and rename the folder to `simplesamlphp`, delete existing `simplesaml/simplesamlphp` and replace with the newly downloaded folder.
-- Git commit it with the version number like "Added simplesamlphp-1.19.5"
-
-
-*This plugin ships with built version of `simplesamlphp` cloned from [`https://github.com/simplesamlphp/simplesamlphp`](https://github.com/simplesamlphp/simplesamlphp).* 
+- Updating is not recommended
 
 ## Configuring the IdP
 
@@ -152,7 +143,7 @@ Keycloak does creates a `Master realm` by default but more realms can be created
 
 ### Clients
 
-Within realms, are clients! A client is an entity that can request Keycloak to authenticate a user. Most often, clients are applications and services that want to use Keycloak to secure themselves and provide a single sign-on solution. Essentially, the client represents or serves as a connector that makes request on behalf of the **service provider (in this case simplesamlphp)**
+Within the realm, there are clients! A client is an entity that can request Keycloak to authenticate a user. Most often, clients are applications and services that want to use Keycloak to secure themselves and provide a single sign-on solution. Essentially, the client represents or serves as a connector that makes request on behalf of the **service provider (in this case simplesamlphp)**
 
 Again, we have a couple of default clients created in the `Master realm` by keycloak! Each client contains access control information such as roles and scope!
 
