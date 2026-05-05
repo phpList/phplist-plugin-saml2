@@ -108,7 +108,11 @@ class simplesaml extends phplistPlugin
         }
         $this->settings[$this->name]['value'] = $dataToWrite[$this->name];
 
-        file_put_contents($filename, "<?php\n\nreturn " . var_export($dataToWrite, true) . ";\n");
+        $content = "<?php\n\nreturn " . var_export($dataToWrite, true) . ";\n";
+        if (!file_exists($filename) || file_get_contents($filename) !== $content) {
+            file_put_contents($filename, $content);
+        }
+
         if ($this->settings['saml_secret_salt']['value'] == getConfig('saml_secret_salt')) {
             $GLOBALS['msg'] = ($GLOBALS['I18N']->get('Please change saml secret salt').'<br/>');
         }
