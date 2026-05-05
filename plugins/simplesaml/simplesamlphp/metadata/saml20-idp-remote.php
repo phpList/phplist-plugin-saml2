@@ -1,7 +1,8 @@
 <?php
 
-$settings = include __DIR__ . '/../../settings.php';
-$key = $settings['saml_idp'] ?? 'https://sso.phplist.com:8443/realms/phplist';
+require_once __DIR__ . '/../config/phplist-settings.php';
+$settings = simplesamlLoadSettings();
+$key = $settings['saml_idp'];
 
 /**
  * SAML 2.0 remote IdP metadata for SimpleSAMLphp.

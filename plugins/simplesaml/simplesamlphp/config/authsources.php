@@ -1,6 +1,7 @@
 <?php
 
-$settings = include __DIR__ . '/../../settings.php';
+require_once __DIR__ . '/phplist-settings.php';
+$settings = simplesamlLoadSettings();
 
 $config = [
     /*
@@ -35,7 +36,7 @@ $config = [
 
         // The entity ID of the IdP this SP should contact.
         // Can be NULL/unset, in which case the user will be shown a list of available IdPs.
-        'idp' => $settings['saml_idp'] ?? 'https://sso.phplist.com:8443/realms/phplist',
+        'idp' => $settings['saml_idp'],
 
         // The URL to the discovery service.
         // Can be NULL/unset, in which case a builtin discovery service will be used.
