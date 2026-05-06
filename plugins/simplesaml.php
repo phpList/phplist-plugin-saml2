@@ -5,7 +5,6 @@ require_once __DIR__ . '/simplesaml/simplesamlphp/lib/_autoload.php';
 
 use SimpleSAML\Auth\Simple;
 use SimpleSAML\Session;
-use SimpleSAML\Utils\HTTP;
 
 class simplesaml extends phplistPlugin
 {
@@ -361,13 +360,27 @@ class simplesaml extends phplistPlugin
             }
         }
 
-        $path = '/realms/' . getConfig('saml_realm');
+        foreach (['AUTH_SESSION_ID', 'KEYCLOAK_SESSION', 'KEYCLOAK_IDENTITY'] as $cookie) {
+            setcookie($cookie, '', [
+                'expires' => time() - 3600,
+                'path' => '/realms/' . getConfig('saml_realm') . '/',
+                'secure' => true,
+                'httponly' => true,
+                'samesite' => 'None',
+            ]);
+
+            setcookie($cookie, '', [
+                'expires' => time() - 3600,
+                'path' => '/realms/master/',
+                'domain' => 'localhost',
+                'secure' => true,
+                'httponly' => true,
+                'samesite' => 'None',
+            ]);
+        }
 
         session_destroy();
-        HTTP::setCookie('SimpleSAMLAuthToken', '', ['expires' => time() - 3600]);
-        HTTP::setCookie('AUTH_SESSION_ID', '', ['expires' => time() - 3600, 'path' => $path]);
-        HTTP::setCookie('KEYCLOAK_SESSION', '', ['expires' => time() - 3600, 'path' => $path]);
-        HTTP::setCookie('KEYCLOAK_IDENTITY', '', ['expires' => time() - 3600, 'path' => $path]);
+
         header('Location: ' . $_SERVER['HTTP_REFERER']);
     }
 
