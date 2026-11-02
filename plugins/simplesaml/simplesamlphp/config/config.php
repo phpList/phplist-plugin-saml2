@@ -5,6 +5,7 @@
  */
 
 $httpUtils = new \SimpleSAML\Utils\HTTP();
+$settings = include __DIR__ . '/../../settings.php';
 
 $config = [
 
@@ -31,7 +32,7 @@ $config = [
      * external url, no matter where you come from (direct access or via the
      * reverse proxy).
      */
-    'baseurlpath' => 'simplesaml/',
+    'baseurlpath' => 'simplesamlphp/public/',
 
     /*
      * The 'application' configuration array groups a set configuration options
@@ -67,7 +68,7 @@ $config = [
      * When specified as a relative path, this is relative to the SimpleSAMLphp
      * root directory.
      */
-    'cachedir' => '/var/cache/simplesamlphp',
+    'cachedir' => sys_get_temp_dir() . '/simplesamlphp',
     //'loggingdir' => '/var/log/',
     //'datadir' => '/var/data/',
     //'tempdir' => '/tmp/simplesamlphp',
@@ -189,7 +190,7 @@ $config = [
      * A possible way to generate a random salt is by running the following command from a unix shell:
      * LC_ALL=C tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo
      */
-    'secretsalt' => 'defaultsecretsalt',
+    'secretsalt' => $settings['saml_secret_salt'] ?? 'defaultsecretsalt',
 
     /*
      * This password must be kept secret, and modified from the default value 123.
@@ -201,7 +202,7 @@ $config = [
      * ansible.builtin.password_hash(hashtype='blowfish', ident='2y', rounds=13)
      * to generate this hashed value.
      */
-    'auth.adminpassword' => '123',
+    'auth.adminpassword' => $settings['saml_admin_password'] ?? '123',
 
     /*
      * Set this option to true if you want to require administrator password to access the metadata.
@@ -236,7 +237,7 @@ $config = [
      * Example:
      *   'trusted.url.domains' => ['sp.example.com', 'app.example.com'],
      */
-    'trusted.url.domains' => [],
+    'trusted.url.domains' => [$settings['saml_trusted_url_domains'] ?? 'phplist.com'],
 
     /*
      * Enable regular expression matching of trusted.url.domains.
@@ -623,7 +624,7 @@ $config = [
      * Example:
      *  'session.cookie.domain' => '.example.org',
      */
-    'session.cookie.domain' => '',
+    'session.cookie.domain' => $settings['saml_session_cookie_domain'] ?? '.phplist.com',
 
     /*
      * Set the secure flag in the cookie.
@@ -659,7 +660,12 @@ $config = [
      * Options to override the default settings for php sessions.
      */
     'session.phpsession.cookiename' => 'SimpleSAML',
-    'session.phpsession.savepath' => null,
+    /*
+     * phpList: only override the save path when explicitly configured. It must be the same path phpList's own
+     * PHP session uses, because SimpleSAMLphp does not restore it when switching back to phpList's session
+     * (Session::cleanup()), and phpList would then lose its login.
+     */
+    'session.phpsession.savepath' => !empty($settings['saml_session_save_path']) ? $settings['saml_session_save_path'] : null,
     'session.phpsession.httponly' => true,
 
     /*

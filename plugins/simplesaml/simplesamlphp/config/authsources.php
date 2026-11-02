@@ -1,5 +1,7 @@
 <?php
 
+$settings = include __DIR__ . '/../../settings.php';
+
 $config = [
     /*
      * When multiple authentication sources are defined, you can specify one to use by default
@@ -25,13 +27,16 @@ $config = [
     // An authentication source which can authenticate against SAML 2.0 IdPs.
     'default-sp' => [
         'saml:SP',
+        'privatekey' => 'saml-private-key.pem',
+        'certificate' => 'saml-certificate.pem',
+        'redirect.sign' => true,
 
         // The entity ID of this SP.
-        'entityID' => 'https://myapp.example.org/',
+        'entityID' => $settings['saml_entity_id'] ?? 'phplist',
 
         // The entity ID of the IdP this SP should contact.
         // Can be NULL/unset, in which case the user will be shown a list of available IdPs.
-        'idp' => null,
+        'idp' => $settings['saml_idp'] ?? 'https://sso.phplist.com:8443/realms/phplist',
 
         // The URL to the discovery service.
         // Can be NULL/unset, in which case a builtin discovery service will be used.
@@ -44,6 +49,18 @@ $config = [
          * IdP in front of the IdP/SP proxy.
          */
         'proxymode.passAuthnContextClassRef' => false,
+
+        'attributes' => [
+            1 => 'NameID',
+            2 => 'ClientID',
+            3 => 'FirstName',
+            4 => 'LastName',
+            5 => 'Email',
+        ],
+        'NameIDPolicy' => [
+            'Format' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
+            'AllowCreate' => true,
+        ],
 
         /*
          * The attributes parameter must contain an array of desired attributes by the SP.

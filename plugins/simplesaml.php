@@ -1,7 +1,6 @@
 <?php
 
 require_once dirname(__FILE__, 2) . '/defaultplugin.php';
-require_once __DIR__ . '/simplesaml/simplesamlphp/lib/_autoload.php';
 
 use SimpleSAML\Auth\Simple;
 use SimpleSAML\Session;
@@ -70,10 +69,10 @@ class simplesaml extends phplistPlugin
             'category' => self::CONFIG_CATEGORY,
         ],
         'saml_session_save_path' => [
-            'value' => '/var/lib/php/sessions',
-            'description' => 'SAML session save path',
+            'value' => '',
+            'description' => 'SAML session save path (leave empty to use the PHP default, it must match the phpList session save path)',
             'type' => 'text',
-            'allowempty' => 0,
+            'allowempty' => 1,
             'category' => self::CONFIG_CATEGORY,
         ],
         'saml_secret_salt' => [
@@ -94,8 +93,8 @@ class simplesaml extends phplistPlugin
     private const SETTINGS_FILE_NAME= 'settings.php';
     function __construct()
     {
-        if ( version_compare(PHP_VERSION, '7.4.0') >= 0) {
-            require_once(__DIR__ . '/simplesaml/simplesamlphp/lib/_autoload.php');
+        if (version_compare(PHP_VERSION, '8.1.0') >= 0) {
+            require_once __DIR__ . '/simplesaml/simplesamlphp/src/_autoload.php';
         }
         parent::__construct();
         $this->tables = $GLOBALS['tables'];
@@ -355,6 +354,10 @@ class simplesaml extends phplistPlugin
             foreach ($cookies as $cookie) {
                 $parts = explode('=', $cookie);
                 $name = trim($parts[0]);
+                // skip names setcookie() rejects (e.g. empty from a trailing ';'), it throws a ValueError on PHP 8
+                if ($name === '' || strpbrk($name, "=,; \t\r\n\013\014") !== false) {
+                    continue;
+                }
                 setcookie($name, '', time() - 1000);
                 setcookie($name, '', time() - 1000, '/');
             }
@@ -386,6 +389,6 @@ class simplesaml extends phplistPlugin
 
     public function dependencyCheck(): array
     {
-        return ['PHP version 7.4 or up'  => version_compare(PHP_VERSION, '7.4.0') >= 0];
+        return ['PHP version 8.1 or up' => version_compare(PHP_VERSION, '8.1.0') >= 0];
     }
 }

@@ -2,6 +2,8 @@
 
 Saml2 plugin for phpList
 
+Bundles [SimpleSAMLphp](https://github.com/simplesamlphp/simplesamlphp) **2.4.10** and requires **PHP 8.1 or newer**.
+
 ## Plugin Setup
 
 After `cd`-ing into the configured phpList plugin directory:
@@ -59,7 +61,8 @@ $config = [
 
 - **In [phplist-plugin-saml2/plugins/simplesaml/simplesamlphp/config/config.php] the following parameters will be set:**
 
-* **`baseurlpath`**: The `baseurlpath` refers to the base url the running `SimpleSAML` configuration. Depending on where simplesaml was installed, it could be a separate domain such as `phplist.com/simplesamlphp/www` or a path like `phplist.com/admin/simplesamlphp/www`.
+* **`baseurlpath`**: The `baseurlpath` refers to the base url the running `SimpleSAML` configuration. Depending on where simplesaml was installed, it could be a separate domain such as `phplist.com/simplesamlphp/public` or a path like `phplist.com/admin/simplesamlphp/public`.
+(SimpleSAMLphp 2.x renamed the web root from `www` to `public`.)
 
 _**NB:** The baseurlpath (which is essentially the simplesaml installation) is where the IdP returns the SAML response after a successful login. The SAML request would then be parsed and simplesamlphp would redirect back to the phplist url that sent the request or the one set via the `RelayState` property in the config array of `authsources.php`_ within the config dir.
 
@@ -72,7 +75,7 @@ $config = [
 
    //...
    //...
-   'baseurlpath' => 'http://phplist.test/simplesamlphp/www/',
+   'baseurlpath' => 'http://phplist.test/simplesamlphp/public/',
    //...
    //...
 
@@ -98,34 +101,67 @@ The `saml20-idp-remote.php` file should look like :
    //...
    //...
 $metadata['https://sso.phplist.com:8443/realms/master'] = [
-    'SingleSignOnService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
-    'SingleLogoutService'  => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
+    'SingleSignOnService' => [
+        [
+            'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+            'Location' => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
+        ],
+    ],
+    'SingleLogoutService' => [
+        [
+            'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
+            'Location' => 'https://sso.phplist.com:8443/realms/master/protocol/saml',
+        ],
+    ],
     'certData' => 'CERT_STRING_',
 ];
 ```
 
 certData will be taken from the cert/saml-remote-idp.crt file (you should add a certificate there, it will not be set from configuration page as other values are)
 
-2) Set up `phplist.domain/simplesamlphp` to point to `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp`
+2) Make `phplist.domain/simplesamlphp/public` serve `PLUGIN_DIR/simplesaml/simplesamlphp/public`, and nothing else from the plugin directory
 
+`PLUGIN_DIR` is the phpList plugin directory the plugin is installed in (e.g. `PATH_TO_PHPLIST_INSTALLATION/public_html/lists/admin/plugins`).
+
+**Only the `public` directory may be web-accessible.** The rest of `simplesamlphp` contains the SP private key (`cert/saml-private-key.pem`), the configuration and `settings.php` (secret salt, admin password hash). Never copy or symlink the whole `simplesamlphp` directory into the web root.
 
 ## Ways to configure 2) above:
 
-* **VERY SIMPLE: ** After following the steps in the configuration phase above, simply copy the contents of `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp` to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp`. OR;
-* A symlink from `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp` to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp` should work. OR; 
-* Server configuration to pass traffic from `phplist.domain/simplesamlphp` to `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp`. 
+* **Apache (recommended):** deny the plugin directory, allow only `public`, and alias the URL to it:
 
+```apache
+<Directory "PLUGIN_DIR/simplesaml">
+    Require all denied
+    AllowOverride None
+</Directory>
+<Directory "PLUGIN_DIR/simplesaml/simplesamlphp/public">
+    Options +FollowSymLinks
+    Require all granted
+    AllowOverride None
+</Directory>
+Alias /simplesamlphp/public PLUGIN_DIR/simplesaml/simplesamlphp/public
+```
 
-Notes: The symlink method would not work in docker and the "VERY SIMPLE" method creates some redundancy. However the goal is that, by whatever means `phplist.domain/simplesamlphp` points to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp`. 
+* **Apache with `.htaccess` only:** the plugin ships `simplesaml/.htaccess` (deny all) and `simplesaml/simplesamlphp/public/.htaccess` (allow). They take effect when `AllowOverride All` (or at least `AuthConfig`) is set for `PLUGIN_DIR`. You still need the URL mapping (`Alias` above, or a symlink of just the `public` directory to `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp/public`).
+* **nginx:** a `location ^~ /simplesamlphp/public/` pointing at `PLUGIN_DIR/simplesaml/simplesamlphp/public/` (PHP via `fastcgi_split_path_info ^(.+?\.php)(/.*)$;` so `module.php/...` paths work), plus `location ^~ PHPLIST_URL_PATH/admin/plugins/simplesaml/ { deny all; }`.
 
-You might be required to manually create a `log` directory inside `PATH_TO_PHPLIST_INSTALLATION/public_html/simplesamlphp` with write permissions granted, so: `mkdir log && sudo chmod -R a+rwx log`
+Check afterwards that `https://phplist.domain/simplesamlphp/public/module.php/saml/sp/metadata/default-sp` returns the SP metadata and that `https://phplist.domain/lists/admin/plugins/simplesaml/simplesamlphp/cert/saml-private-key.pem` returns 403/404.
 
-**NB**: `simplesamlphp` **MUST BE CONFIGURED ON SAME DOMAIN** as your phplist installation. Hence `phplist.domain/simplesamlphp` SHOULD point to `phplist-plugin-saml2/plugins/simplesaml/simplesamlphp`. 
+SimpleSAMLphp 2.x needs a writable cache directory. It is set to `sys_get_temp_dir() . '/simplesamlphp'` via `cachedir` in `config/config.php`; change it there if your system temp dir is not writable by the web server.
+
+**Session save path:** leave the "SAML session save path" setting empty unless you know you need it. SimpleSAMLphp keeps its own PHP session (cookie `SimpleSAML`) and switches back to phpList's session (`phpListSession`) after login, but it does not restore the save path when switching back. If the configured path differs from the one phpList uses, phpList's login is written to the wrong place and lost on the next request.
+
+Logging goes to syslog by default (`logging.handler` in `config/config.php`). If you switch to the `file` handler, logs go to the system temp dir unless you set `loggingdir` (e.g. to `simplesamlphp/logs/`, which must then be writable by the web server).
+
+**NB**: `simplesamlphp` **MUST BE CONFIGURED ON SAME DOMAIN** as your phplist installation. Hence `phplist.domain/simplesamlphp/public` SHOULD point to `PLUGIN_DIR/simplesaml/simplesamlphp/public`.
 
 
 # UPDATING SimpleSAMLPHP [Developer Instructions]
 
-- Updating is not recommended
+- Download the `-full` release tarball from https://github.com/simplesamlphp/simplesamlphp/releases (it includes `vendor/` and the bundled modules).
+- Replace `plugins/simplesaml/simplesamlphp` with it, keeping `cert/`, `config/config.php`, `config/authsources.php` and `metadata/saml20-idp-remote.php` (re-apply the `$settings` customizations to the new `*.dist` templates).
+- No SimpleSAMLphp core files are patched; only `config/`, `metadata/` and `cert/` are phpList-specific.
+- SimpleSAMLphp 2.5+ requires PHP 8.3.
 
 ## Configuring the IdP
 
