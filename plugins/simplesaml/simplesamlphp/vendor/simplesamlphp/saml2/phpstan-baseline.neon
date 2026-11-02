@@ -1,0 +1,121 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Access to constant AES128_CBC on an unknown class SimpleSAML\\\\XMLSecurity\\\\XMLSecurityKey\\.$#"
+			count: 1
+			path: src/Certificate/PrivateKeyLoader.php
+
+		-
+			message: "#^Access to constant RSA_1_5 on an unknown class SimpleSAML\\\\XMLSecurity\\\\XMLSecurityKey\\.$#"
+			count: 1
+			path: src/Certificate/PrivateKeyLoader.php
+
+		-
+			message: "#^Instantiated class SimpleSAML\\\\XMLSecurity\\\\XMLSecurityKey not found\\.$#"
+			count: 2
+			path: src/Certificate/PrivateKeyLoader.php
+
+		-
+			message: "#^Method SimpleSAML\\\\SAML2\\\\Certificate\\\\PrivateKeyLoader\\:\\:convertPrivateKeyToRsaKey\\(\\) has invalid return type SimpleSAML\\\\XMLSecurity\\\\XMLSecurityKey\\.$#"
+			count: 1
+			path: src/Certificate/PrivateKeyLoader.php
+
+		-
+			message: "#^Parameter \\$key of method SimpleSAML\\\\SAML2\\\\SOAPClient\\:\\:validateSSL\\(\\) has invalid type SimpleSAML\\\\XMLSecurity\\\\XMLSecurityKey\\.$#"
+			count: 1
+			path: src/SOAPClient.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 2
+			path: src/XML/md/AbstractEndpointType.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 2
+			path: src/XML/md/AbstractIndexedEndpointType.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\md\\\\AbstractRoleDescriptor\\)\\:\\:XSI_TYPE_NAME\\.$#"
+			count: 2
+			path: src/XML/md/AbstractRoleDescriptor.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\md\\\\AbstractRoleDescriptor\\)\\:\\:XSI_TYPE_NAMESPACE\\.$#"
+			count: 2
+			path: src/XML/md/AbstractRoleDescriptor.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\md\\\\AbstractRoleDescriptor\\)\\:\\:XSI_TYPE_PREFIX\\.$#"
+			count: 2
+			path: src/XML/md/AbstractRoleDescriptor.php
+
+		-
+			message: "#^Call to an undefined static method SimpleSAML\\\\SAML2\\\\XML\\\\md\\\\AbstractSignedMdElement\\:\\:getXsiTypeNamespaceURI\\(\\)\\.$#"
+			count: 1
+			path: src/XML/md/AbstractSignedMdElement.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractBaseID\\)\\:\\:XSI_TYPE_NAME\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractBaseID.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractBaseID\\)\\:\\:XSI_TYPE_NAMESPACE\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractBaseID.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractBaseID\\)\\:\\:XSI_TYPE_PREFIX\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractBaseID.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractCondition\\)\\:\\:XSI_TYPE_NAME\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractCondition.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractCondition\\)\\:\\:XSI_TYPE_NAMESPACE\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractCondition.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractCondition\\)\\:\\:XSI_TYPE_PREFIX\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractCondition.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractStatement\\)\\:\\:XSI_TYPE_NAME\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractStatement.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractStatement\\)\\:\\:XSI_TYPE_NAMESPACE\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractStatement.php
+
+		-
+			message: "#^Access to undefined constant static\\(SimpleSAML\\\\SAML2\\\\XML\\\\saml\\\\AbstractStatement\\)\\:\\:XSI_TYPE_PREFIX\\.$#"
+			count: 2
+			path: src/XML/saml/AbstractStatement.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 1
+			path: src/XML/saml/Attribute.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 1
+			path: src/XML/saml/EncryptedAttribute.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 1
+			path: src/XML/saml/EncryptedID.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 1
+			path: src/XML/saml/NameIDType.php

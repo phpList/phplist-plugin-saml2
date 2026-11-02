@@ -13,7 +13,8 @@ namespace Symfony\Component\HttpFoundation\Session\Storage;
 
 /**
  * MockFileSessionStorage is used to mock sessions for
- * functional testing when done in a single PHP process.
+ * functional testing where you may need to persist session data
+ * across separate PHP processes.
  *
  * No PHP session is actually started since a session can be initialized
  * and shutdown only once per PHP execution cycle and this class does
@@ -24,20 +25,17 @@ namespace Symfony\Component\HttpFoundation\Session\Storage;
  */
 class MockFileSessionStorage extends MockArraySessionStorage
 {
-    private $savePath;
+    private string $savePath;
 
     /**
-     * @param string $savePath Path of directory to save session files
-     * @param string $name     Session name
+     * @param string|null $savePath Path of directory to save session files
      */
-    public function __construct(string $savePath = null, string $name = 'MOCKSESSID', MetadataBag $metaBag = null)
+    public function __construct(?string $savePath = null, string $name = 'MOCKSESSID', ?MetadataBag $metaBag = null)
     {
-        if (null === $savePath) {
-            $savePath = sys_get_temp_dir();
-        }
+        $savePath ??= sys_get_temp_dir();
 
-        if (!is_dir($savePath) && !@mkdir($savePath, 0777, true) && !is_dir($savePath)) {
-            throw new \RuntimeException(sprintf('Session Storage was not able to create directory "%s".', $savePath));
+        if (!is_dir($savePath) && !@mkdir($savePath, 0o777, true) && !is_dir($savePath)) {
+            throw new \RuntimeException(\sprintf('Session Storage was not able to create directory "%s".', $savePath));
         }
 
         $this->savePath = $savePath;
@@ -45,10 +43,7 @@ class MockFileSessionStorage extends MockArraySessionStorage
         parent::__construct($name, $metaBag);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function start()
+    public function start(): bool
     {
         if ($this->started) {
             return true;
@@ -65,10 +60,7 @@ class MockFileSessionStorage extends MockArraySessionStorage
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function regenerate($destroy = false, $lifetime = null)
+    public function regenerate(bool $destroy = false, ?int $lifetime = null): bool
     {
         if (!$this->started) {
             $this->start();
@@ -82,7 +74,7 @@ class MockFileSessionStorage extends MockArraySessionStorage
     }
 
     /**
-     * {@inheritdoc}
+     * @return void
      */
     public function save()
     {
@@ -153,7 +145,7 @@ class MockFileSessionStorage extends MockArraySessionStorage
             restore_error_handler();
         }
 
-        $this->data = $data ? unserialize($data) : [];
+        $this->data = $data ? unserialize($data, ['allowed_classes' => true]) : [];
 
         $this->loadSession();
     }

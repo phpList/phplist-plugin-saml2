@@ -1,0 +1,10 @@
+# Nothing in the plugin directory may be served directly (certificates, private keys,
+# SimpleSAMLphp config, settings.php). Only simplesamlphp/public/ is web-accessible,
+# see simplesamlphp/public/.htaccess.
+<IfModule mod_authz_core.c>
+	Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+	Order allow,deny
+	Deny from all
+</IfModule>
