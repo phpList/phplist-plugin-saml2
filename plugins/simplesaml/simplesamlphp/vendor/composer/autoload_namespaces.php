@@ -6,5 +6,4 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Crypt_CHAP_' => array($vendorDir . '/dapphp/radius/lib'),
 );

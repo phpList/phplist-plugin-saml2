@@ -158,8 +158,8 @@ Logging goes to syslog by default (`logging.handler` in `config/config.php`). If
 
 # UPDATING SimpleSAMLPHP [Developer Instructions]
 
-- Download the `-full` release tarball from https://github.com/simplesamlphp/simplesamlphp/releases (it includes `vendor/` and the bundled modules).
-- Replace `plugins/simplesaml/simplesamlphp` with it, keeping `cert/`, `config/config.php`, `config/authsources.php` and `metadata/saml20-idp-remote.php` (re-apply the `$settings` customizations to the new `*.dist` templates).
+- Download the `-slim` release tarball from https://github.com/simplesamlphp/simplesamlphp/releases (it includes `vendor/` and only the core modules, `admin`, `core` and `saml` being the ones this plugin uses; the `-full` tarball adds modules the plugin doesn't need).
+- Replace `plugins/simplesaml/simplesamlphp` with it, keeping `cert/`, `config/config.php`, `config/authsources.php`, `metadata/saml20-idp-remote.php` and `public/.htaccess` (re-apply the `$settings` customizations to the new `*.dist` templates).
 - No SimpleSAMLphp core files are patched; only `config/`, `metadata/` and `cert/` are phpList-specific.
 - SimpleSAMLphp 2.5+ requires PHP 8.3.
 
