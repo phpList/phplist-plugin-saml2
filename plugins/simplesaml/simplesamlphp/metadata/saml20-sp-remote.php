@@ -6,30 +6,64 @@
  * See: https://simplesamlphp.org/docs/stable/simplesamlphp-reference-sp-remote
  */
 
-// /*
-//  * Example SimpleSAMLphp SAML 2.0 SP
-//  */
-// // $metadata['sso.phplist.com'] = [
-// //     // 'AssertionConsumerService' => 'http://phplist.test/simplesaml-login',
-// //     'SingleLogoutService' => 'http://phplist.test/simplesaml-logout',
-// // ];
+/*
+ * Example SimpleSAMLphp SAML 2.0 SP
+ */
+$metadata['https://saml2sp.example.org'] = [
+    'AssertionConsumerService' => [
+        [
+            'index' => 1,
+            'isDefault' => true,
+            'Location' => 'https://saml2.example.org/module.php/saml/sp/saml2-acs.php/default-sp',
+            'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+        ],
+    ],
+    'SingleLogoutService' => [
+        [
+            'Location' => 'https://saml2sp.example.org/module.php/saml/sp/saml2-logout.php/default-sp',
+            'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
+        ],
+    ],
+];
 
 /*
  * This example shows an example config that works with Google Workspace (G Suite / Google Apps) for education.
  * What is important is that you have an attribute in your IdP that maps to the local part of the email address at
  * Google Workspace. In example, if your Google account is foo.com, and you have a user that has an email john@foo.com,
- * then you must set the simplesaml.nameidattribute to be the name of an attribute that for this user has the
- * value of 'john'.
+ * then you must properly configure the saml:AttributeNameID authproc-filter with the name of an attribute that for
+ * this user has the value of 'john'.
  */
 $metadata['google.com'] = [
-    'AssertionConsumerService' => 'https://www.google.com/a/g.feide.no/acs',
+    'AssertionConsumerService' => [
+        [
+            'index' => 1,
+            'isDefault' => true,
+            'Location' => 'https://www.google.com/a/g.feide.no/acs',
+            'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+        ],
+    ], 
     'NameIDFormat' => 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
-    'simplesaml.nameidattribute' => 'uid',
+    'authproc' => [
+      1 => [
+        'class' => 'saml:AttributeNameID',
+        'identifyingAttribute' => 'uid',
+        'Format' => 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+      ],
+    ],
     'simplesaml.attributes' => false,
 ];
 
+
 $metadata['https://legacy.example.edu'] = [
-    'AssertionConsumerService' => 'https://legacy.example.edu/saml/acs',
+    'AssertionConsumerService' => [
+        [
+            'index' => 1,
+            'isDefault' => true,
+            'Location' => 'https://legacy.example.edu/saml/acs',
+            'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+        ],
+    ],
+    
     /*
      * Currently, SimpleSAMLphp defaults to the SHA-256 hashing algorithm.
      * Uncomment the following option to use SHA-1 for signatures directed

@@ -14,11 +14,11 @@ namespace Symfony\Component\VarDumper\Caster;
 use Symfony\Component\VarDumper\Cloner\Stub;
 
 /**
- * Casts pqsql resources to array representation.
+ * Casts pgsql resources to array representation.
  *
  * @author Nicolas Grekas <p@tchwork.com>
  *
- * @final since Symfony 4.4
+ * @final
  */
 class PgSqlCaster
 {
@@ -69,14 +69,20 @@ class PgSqlCaster
         'function' => \PGSQL_DIAG_SOURCE_FUNCTION,
     ];
 
-    public static function castLargeObject($lo, array $a, Stub $stub, $isNested)
+    /**
+     * @return array
+     */
+    public static function castLargeObject($lo, array $a, Stub $stub, bool $isNested)
     {
         $a['seek position'] = pg_lo_tell($lo);
 
         return $a;
     }
 
-    public static function castLink($link, array $a, Stub $stub, $isNested)
+    /**
+     * @return array
+     */
+    public static function castLink($link, array $a, Stub $stub, bool $isNested)
     {
         $a['status'] = pg_connection_status($link);
         $a['status'] = new ConstStub(\PGSQL_CONNECTION_OK === $a['status'] ? 'PGSQL_CONNECTION_OK' : 'PGSQL_CONNECTION_BAD', $a['status']);
@@ -108,7 +114,10 @@ class PgSqlCaster
         return $a;
     }
 
-    public static function castResult($result, array $a, Stub $stub, $isNested)
+    /**
+     * @return array
+     */
+    public static function castResult($result, array $a, Stub $stub, bool $isNested)
     {
         $a['num rows'] = pg_num_rows($result);
         $a['status'] = pg_result_status($result);
@@ -131,11 +140,11 @@ class PgSqlCaster
         for ($i = 0; $i < $fields; ++$i) {
             $field = [
                 'name' => pg_field_name($result, $i),
-                'table' => sprintf('%s (OID: %s)', pg_field_table($result, $i), pg_field_table($result, $i, true)),
-                'type' => sprintf('%s (OID: %s)', pg_field_type($result, $i), pg_field_type_oid($result, $i)),
-                'nullable' => (bool) pg_field_is_null($result, $i),
+                'table' => \sprintf('%s (OID: %s)', pg_field_table($result, $i), pg_field_table($result, $i, true)),
+                'type' => \sprintf('%s (OID: %s)', pg_field_type($result, $i), pg_field_type_oid($result, $i)),
+                'nullable' => (bool) (\PHP_VERSION_ID >= 80300 ? pg_field_is_null($result, null, $i) : pg_field_is_null($result, $i)),
                 'storage' => pg_field_size($result, $i).' bytes',
-                'display' => pg_field_prtlen($result, $i).' chars',
+                'display' => (\PHP_VERSION_ID >= 80300 ? pg_field_prtlen($result, null, $i) : pg_field_prtlen($result, $i)).' chars',
             ];
             if (' (OID: )' === $field['table']) {
                 $field['table'] = null;

@@ -5,7 +5,6 @@
  */
 
 $httpUtils = new \SimpleSAML\Utils\HTTP();
-$settings = include __DIR__ . '/../../settings.php';
 
 $config = [
 
@@ -25,17 +24,20 @@ $config = [
      *
      * The full url format is useful if your SimpleSAMLphp setup is hosted behind
      * a reverse proxy. In that case you can specify the external url here.
+     * Specifying the full URL including https: will let SimpleSAMLphp know
+     * that it runs on HTTPS even if the backend server is plain HTTP.
      *
      * Please note that SimpleSAMLphp will then redirect all queries to the
      * external url, no matter where you come from (direct access or via the
      * reverse proxy).
      */
-    'baseurlpath' => 'simplesamlphp/www/',
+    'baseurlpath' => 'simplesaml/',
+
     /*
      * The 'application' configuration array groups a set configuration options
      * relative to an application protected by SimpleSAMLphp.
      */
-    //'application' => [
+    'application' => [
         /*
          * The 'baseURL' configuration option allows you to specify a protocol,
          * host and optionally a port that serves as the canonical base for all
@@ -51,23 +53,74 @@ $config = [
          * to SimpleSAMLphp's API.
          */
         //'baseURL' => 'https://example.com',
-    //],
+    ],
 
     /*
      * The following settings are *filesystem paths* which define where
      * SimpleSAMLphp can find or write the following things:
-     * - 'certdir': The base directory for certificate and key material.
-     * - 'loggingdir': Where to write logs.
+     * - 'cachedir': Where SimpleSAMLphp can write its cache.
+     * - 'loggingdir': Where to write logs. MUST be set to NULL when using a logging
+     *                 handler other than `file`.
      * - 'datadir': Storage of general data.
      * - 'tempdir': Saving temporary files. SimpleSAMLphp will attempt to create
-     *   this directory if it doesn't exist.
+     *   this directory if it doesn't exist. DEPRECATED - replaced by cachedir.
      * When specified as a relative path, this is relative to the SimpleSAMLphp
      * root directory.
      */
+    'cachedir' => '/var/cache/simplesamlphp',
+    //'loggingdir' => '/var/log/',
+    //'datadir' => '/var/data/',
+    //'tempdir' => '/tmp/simplesamlphp',
+
+    /*
+     * Certificate and key material can be loaded from different possible
+     * locations. Currently two locations are supported, the local filesystem
+     * and the database via pdo using the global database configuration. Locations
+     * are specified by a URL-link prefix before the file name/path or database
+     * identifier.
+     */
+
+    /* To load a certificate or key from the filesystem, it should be specified
+     * as 'file://<name>' where <name> is either a relative filename or a fully
+     * qualified path to a file containing the certificate or key in PEM
+     * format, such as 'cert.pem' or '/path/to/cert.pem'. If the path is
+     * relative, it will be searched for in the directory defined by the
+     * 'certdir' parameter below. When 'certdir' is specified as a relative
+     * path, it will be interpreted as relative to the SimpleSAMLphp root
+     * directory. Note that locations with no prefix included will be treated
+     * as file locations.
+     */
     'certdir' => 'cert/',
-    'loggingdir' => 'log/',
-    'datadir' => 'data/',
-    'tempdir' => '/tmp/simplesaml',
+
+    /* To load a certificate or key from the database, it should be specified
+     * as 'pdo://<id>' where <id> is the identifier in the database table that
+     * should be matched. While the certificate and key tables are expected to
+     * be in the simplesaml database, they are not created or managed by
+     * simplesaml. The following parameters control how the pdo location
+     * attempts to retrieve certificates and keys from the database:
+     *
+     * - 'cert.pdo.table': name of table where certificates are stored
+     * - 'cert.pdo.keytable': name of table where keys are stored
+     * - 'cert.pdo.apply_prefix': whether or not to prepend the database.prefix
+     *                            parameter to the table names; if you are using
+     *                            database.prefix to separate multiple SSP instances
+     *                            in the same database but want to share certificate/key
+     *                            data between them, set this to false
+     * - 'cert.pdo.id_column': name of column to use as identifier
+     * - 'cert.pdo.data_column': name of column where PEM data is stored
+     *
+     * Basically, the query executed will be:
+     *
+     *   SELECT cert.pdo.data_column FROM cert.pdo.table WHERE cert.pdo.id_column = :id
+     *
+     * Defaults are shown below, to change them, uncomment the line and update as
+     * needed
+     */
+    //'cert.pdo.table' => 'certificates',
+    //'cert.pdo.keytable' => 'private_keys',
+    //'cert.pdo.apply_prefix' => true,
+    //'cert.pdo.id_column' => 'id',
+    //'cert.pdo.data_column' => 'data',
 
     /*
      * Some information about the technical persons running this installation.
@@ -89,18 +142,22 @@ $config = [
      * Set the transport options for the transport method specified.  The valid settings are relative to the
      * selected transport method.
      */
-    // // smtp mail transport options
-    // 'mail.transport.options' => [
-    //     'host' => 'mail.example.org', // required
-    //     'port' => 25, // optional
-    //     'username' => 'user@example.org', // optional: if set, enables smtp authentication
-    //     'password' => 'password', // optional: if set, enables smtp authentication
-    //     'security' => 'tls', // optional: defaults to no smtp security
-    // ],
-    // // sendmail mail transport options
-    // 'mail.transport.options' => [
-    //     'path' => '/usr/sbin/sendmail' // optional: defaults to php.ini path
-    // ],
+    /*
+    'mail.transport.options' => [
+        'host' => 'mail.example.org', // required
+        'port' => 25, // optional
+        'username' => 'user@example.org', // optional: if set, enables smtp authentication
+        'password' => 'password', // optional: if set, enables smtp authentication
+        'security' => 'tls', // optional: defaults to no smtp security
+        'smtpOptions' => [], // optional: passed to stream_context_create when connecting via SMTP
+    ],
+
+    // sendmail mail transport options
+    /*
+    'mail.transport.options' => [
+        'path' => '/usr/sbin/sendmail' // optional: defaults to php.ini path
+    ],
+    */
 
     /*
      * The envelope from address for outgoing emails.
@@ -132,21 +189,23 @@ $config = [
      * A possible way to generate a random salt is by running the following command from a unix shell:
      * LC_ALL=C tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo
      */
-    'secretsalt' => $settings['saml_secret_salt'] ?? 'defaultsecretsalt',
+    'secretsalt' => 'defaultsecretsalt',
 
     /*
      * This password must be kept secret, and modified from the default value 123.
      * This password will give access to the installation page of SimpleSAMLphp with
      * metadata listing and diagnostics pages.
      * You can also put a hash here; run "bin/pwgen.php" to generate one.
+     *
+     * If you are using Ansible you might like to use
+     * ansible.builtin.password_hash(hashtype='blowfish', ident='2y', rounds=13)
+     * to generate this hashed value.
      */
-    'auth.adminpassword' => $settings['saml_admin_password'] ?? '123',
+    'auth.adminpassword' => '123',
 
     /*
-     * Set this options to true if you want to require administrator password to access the web interface
-     * or the metadata pages, respectively.
+     * Set this option to true if you want to require administrator password to access the metadata.
      */
-    'admin.protectindexpage' => false,
     'admin.protectmetadata' => false,
 
     /*
@@ -177,8 +236,7 @@ $config = [
      * Example:
      *   'trusted.url.domains' => ['sp.example.com', 'app.example.com'],
      */
-    'trusted.url.domains' => [$settings['saml_trusted_url_domains'] ?? 'phplist.com'],
-    'assertion.allowedClockSkew' => 1800, // Tolerance in seconds (e.g., 3 minutes)
+    'trusted.url.domains' => [],
 
     /*
      * Enable regular expression matching of trusted.url.domains.
@@ -207,13 +265,28 @@ $config = [
     /*
      * Set the allowed clock skew between encrypting/decrypting assertions
      *
-     * If you have an server that is constantly out of sync, this option
+     * If you have a server that is constantly out of sync, this option
      * allows you to adjust the allowed clock-skew.
      *
      * Allowed range: 180 - 300
      * Defaults to 180.
      */
     'assertion.allowed_clock_skew' => 180,
+
+    /*
+     * Set custom security headers. The defaults can be found in \SimpleSAML\Configuration::DEFAULT_SECURITY_HEADERS
+     *
+     * NOTE: When a header is already set on the response we will NOT overrule it and leave it untouched.
+     *
+     * Whenever you change any of these headers, make sure to validate your config by running your
+     * hostname through a security-test like https://en.internet.nl
+    'headers.security' => [
+        'Content-Security-Policy' => "default-src 'none'; frame-ancestors 'self'; object-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'",
+        'X-Frame-Options' => 'SAMEORIGIN',
+        'X-Content-Type-Options' => 'nosniff',
+        'Referrer-Policy' => 'origin-when-cross-origin',
+    ],
+     */
 
 
     /************************
@@ -269,12 +342,11 @@ $config = [
 
     /*
      * Custom error show function called from SimpleSAML\Error\Error::show.
-     * See docs/simplesamlphp-errorhandling.txt for function code example.
+     * See docs/simplesamlphp-errorhandling.md for function code example.
      *
      * Example:
      *   'errors.show_function' => ['SimpleSAML\Module\example\Error', 'show'],
      */
-
 
 
     /**************************
@@ -293,6 +365,9 @@ $config = [
      *
      * Options: [syslog,file,errorlog,stderr]
      *
+     * If you set the handler to 'file', the directory specified in loggingdir above
+     * must exist and be writable for SimpleSAMLphp. If set to something else, set
+     * loggingdir above to 'null'.
      */
     'logging.level' => SimpleSAML\Logger::NOTICE,
     'logging.handler' => 'syslog',
@@ -303,7 +378,7 @@ $config = [
      * are:
      *
      * - %date{<format>}: the date and time, with its format specified inside the brackets. See the PHP documentation
-     *   of the strftime() function for more information on the format. If the brackets are omitted, the standard
+     *   of the date() function for more information on the format. If the brackets are omitted, the standard
      *   format is applied. This can be useful if you just want to control the placement of the date, but don't care
      *   about the format.
      *
@@ -323,7 +398,7 @@ $config = [
      * - %msg: the message to be logged.
      *
      */
-    //'logging.format' => '%date{%b %d %H:%M:%S} %process %level %stat[%trackid] %msg',
+    //'logging.format' => '%date{M j H:i:s} %process %level %stat[%trackid] %msg',
 
     /*
      * Choose which facility should be used when logging with syslog.
@@ -353,7 +428,8 @@ $config = [
      * This is an array of outputs. Each output has at least a 'class' option, which
      * selects the output.
      */
-    'statistics.out' => [// Log statistics to the normal log.
+    'statistics.out' => [
+        // Log statistics to the normal log.
         /*
         [
             'class' => 'core:Log',
@@ -379,7 +455,7 @@ $config = [
      * Proxy to use for retrieving URLs.
      *
      * Example:
-     *   'proxy' => 'tcp://proxy.example.com:5100'
+     *   'proxy' => 'http://proxy.example.com:5100'
      */
     'proxy' => null,
 
@@ -478,18 +554,18 @@ $config = [
      * Example:
      *
      * 'module.enable' => [
-     *      'exampleauth' => true, // Setting to TRUE enables.
-     *      'consent' => false, // Setting to FALSE disables.
-     *      'core' => null, // Unset or NULL uses default.
+     *     'exampleauth' => true, // Setting to TRUE enables.
+     *     'consent' => false, // Setting to FALSE disables.
+     *     'core' => null, // Unset or NULL uses default.
      * ],
      */
 
-     'module.enable' => [
-         'exampleauth' => false,
-         'core' => true,
-         'admin' => true,
-         'saml' => true
-     ],
+    'module.enable' => [
+        'exampleauth' => false,
+        'core' => true,
+        'admin' => true,
+        'saml' => true,
+    ],
 
 
     /*************************
@@ -547,7 +623,7 @@ $config = [
      * Example:
      *  'session.cookie.domain' => '.example.org',
      */
-    'session.cookie.domain' => $settings['saml_session_cookie_domain'] ?? '.phplist.com',
+    'session.cookie.domain' => '',
 
     /*
      * Set the secure flag in the cookie.
@@ -555,8 +631,10 @@ $config = [
      * Set this to TRUE if the user only accesses your service
      * through https. If the user can access the service through
      * both http and https, this must be set to FALSE.
+     *
+     * If unset, SimpleSAMLphp will try to automatically determine the right value
      */
-    'session.cookie.secure' => false,
+    //'session.cookie.secure' => true,
 
     /*
      * Set the SameSite attribute in the cookie.
@@ -564,6 +642,13 @@ $config = [
      * You can set this to the strings 'None', 'Lax', or 'Strict' to support
      * the RFC6265bis SameSite cookie attribute. If set to null, no SameSite
      * attribute will be sent.
+     *
+     * A value of "None" is required to properly support cross-domain POST
+     * requests which are used by different SAML bindings. Because some older
+     * browsers do not support this value, the canSetSameSiteNone function
+     * can be called to only set it for compatible browsers.
+     *
+     * You must also set the 'session.cookie.secure' value above to true.
      *
      * Example:
      *  'session.cookie.samesite' => 'None',
@@ -574,7 +659,7 @@ $config = [
      * Options to override the default settings for php sessions.
      */
     'session.phpsession.cookiename' => 'SimpleSAML',
-    'session.phpsession.savepath' => $settings['saml_session_savepath'] ?? '/var/lib/php/sessions',
+    'session.phpsession.savepath' => null,
     'session.phpsession.httponly' => true,
 
     /*
@@ -601,7 +686,7 @@ $config = [
 
     /*
      * Custom function for session checking called on session init and loading.
-     * See docs/simplesamlphp-advancedfeatures.txt for function code example.
+     * See docs/simplesamlphp-advancedfeatures.md for function code example.
      *
      * Example:
      *   'session.check_function' => ['\SimpleSAML\Module\example\Util', 'checkSession'],
@@ -740,8 +825,8 @@ $config = [
      */
     'language.available' => [
         'en', 'no', 'nn', 'se', 'da', 'de', 'sv', 'fi', 'es', 'ca', 'fr', 'it', 'nl', 'lb',
-        'cs', 'sl', 'lt', 'hr', 'hu', 'pl', 'pt', 'pt-br', 'tr', 'ja', 'zh', 'zh-tw', 'ru',
-        'et', 'he', 'id', 'sr', 'lv', 'ro', 'eu', 'el', 'af', 'zu', 'xh', 'st',
+        'cs', 'sk', 'sl', 'lt', 'hr', 'hu', 'pl', 'pt', 'pt_BR', 'tr', 'ja', 'zh', 'zh_TW',
+        'ru', 'et', 'he', 'id', 'sr', 'lv', 'ro', 'eu', 'el', 'af', 'zu', 'xh', 'st',
     ],
     'language.rtl' => ['ar', 'dv', 'fa', 'ur', 'he'],
     'language.default' => 'en',
@@ -788,7 +873,7 @@ $config = [
      * Set this option to the text you would like to appear at the header of each page. Set to false if you don't want
      * any text to appear in the header.
      */
-    //'theme.header' => 'SimpleSAMLphp'
+    //'theme.header' => 'SimpleSAMLphp',
 
     /**
      * A template controller, if any.
@@ -816,6 +901,14 @@ $config = [
      */
     'template.auto_reload' => false,
 
+
+    /*
+     * Set the 'template.debug' to true to enable debugging for Twig templates.
+     * This is useful during development as it provides better error messages.
+     * Defaults to false.
+     */
+    //'template.debug' => false,
+
     /*
      * Set this option to true to indicate that your installation of SimpleSAMLphp
      * is running in a production environment. This will affect the way resources
@@ -833,6 +926,19 @@ $config = [
      * The serving of the resources can be configured through these settings.
      */
     'assets' => [
+        /*
+         * Used to generate cache buster tags. This salt is only used for this purpose.
+         * You should set this in the same way as secretsalt.
+         *
+         * You can change this salt at any time. This will have the effect of explicit
+         * cache busting as the tags for resources will change and thus all resources
+         * will be fetched again.
+         *
+         * Leaving the default value in place can allow an attacker the opportunity
+         * to work out the version of SSP you have installed.
+         */
+        'salt' => 'assets.salt.default',
+
         /*
          * These settings adjust the caching headers that are sent
          * when serving static resources.
@@ -854,6 +960,12 @@ $config = [
         ],
     ],
 
+    /**
+     * Set to a full URL if you want to redirect users that land on SimpleSAMLphp's
+     * front page to somewhere more useful. If left unset, a basic welcome message
+     * is shown.
+     */
+    //'frontpage.redirect' => 'https://example.com/',
 
     /*********************
      | DISCOVERY SERVICE |
@@ -874,7 +986,7 @@ $config = [
 
     /*
      * IdP Discovery service look configuration.
-     * Wether to display a list of idp or to display a dropdown box. For many IdP' a dropdown box
+     * Whether to display a list of idp or to display a dropdown box. For many IdP' a dropdown box
      * gives the best use experience.
      *
      * When using dropdown box a cookie is used to highlight the previously chosen IdP in the dropdown.
@@ -895,7 +1007,7 @@ $config = [
      */
     'authproc.idp' => [
         /* Enable the authproc filter below to add URN prefixes to all attributes
-        10 => array[
+        10 => [
             'class' => 'core:AttributeMap', 'addurnprefix'
         ],
         */
@@ -905,12 +1017,6 @@ $config = [
 
         // Adopts language from attribute to use in UI
         30 => 'core:LanguageAdaptor',
-
-        45 => [
-            'class'         => 'core:StatisticsWithAttribute',
-            'attributename' => 'realm',
-            'type'          => 'saml20-idp-SSO',
-        ],
 
         /* When called without parameters, it will fallback to filter attributes 'the old way'
          * by checking the 'attributes' parameter in metadata on IdP hosted and SP remote.
@@ -1015,7 +1121,7 @@ $config = [
      * The MDQ metadata handler defines the following options:
      * - 'type': This is always 'mdq'.
      * - 'server': Base URL of the MDQ server. Mandatory.
-     * - 'validateFingerprint': The fingerprint of the certificate used to sign the metadata. You don't need this
+     * - 'validateCertificate': The certificates file that may be used to sign the metadata. You don't need this
      *                          option if you don't want to validate the signature on the metadata. Optional.
      * - 'cachedir': Directory where metadata can be cached. Optional.
      * - 'cachelength': Maximum time metadata can be cached, in seconds. Defaults to 24
@@ -1046,11 +1152,30 @@ $config = [
      *     ['type' => 'xml', 'file' => 'idp.example.org-idpMeta.xml'],
      * ],
      *
+     * This example defines a remote xml-file with optional connection context.
+     * See PHP documentation for possible context options: https://www.php.net/manual/en/context.php
+     *
+     * 'metadata.sources' => [
+     *     [
+     *         'type' => 'xml',
+     *         'url' => 'https://example.org/idp.example.org-idpMeta.xml',
+     *         'context' => [
+     *             'ssl' => [
+     *                 'verify_peer' => true,
+     *             ],
+     *         ],
+     *     ],
+     * ],
+     *
      * This example defines an mdq source.
      * 'metadata.sources' => [
      *      [
      *          'type' => 'mdq',
      *          'server' => 'http://mdq.server.com:8080',
+     *          'validateCertificate' => [
+     *              '/var/simplesamlphp/cert/metadata-key.new.crt',
+     *              '/var/simplesamlphp/cert/metadata-key.old.crt'
+     *          ],
      *          'cachedir' => '/var/simplesamlphp/mdq-cache',
      *          'cachelength' => 86400
      *      ]
@@ -1091,6 +1216,7 @@ $config = [
     'metadata.sign.privatekey' => null,
     'metadata.sign.privatekey_pass' => null,
     'metadata.sign.certificate' => null,
+    'metadata.sign.algorithm' => 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
 
 
     /****************************
@@ -1108,12 +1234,6 @@ $config = [
      * The default datastore is 'phpsession'.
      */
     'store.type'                    => 'phpsession',
-    'session.cookie_domain' => $settings['saml_session_cookie_domain'] ?? '.localhost',
-    'session.cookie_path' => '/',
-    'session.cookie_secure' => false,
-//    'store.type' => 'redis',
-//    'store.redis.timeout' => 0,         // Connection timeout in seconds (0 for no timeout)
-//    'store.redis.database' => 0,        // Redis database index
 
     /*
      * The DSN the sql datastore should connect to.
@@ -1146,7 +1266,74 @@ $config = [
     'store.redis.port' => 6379,
 
     /*
+     * The credentials to use when connecting to Redis.
+     *
+     * If your Redis server is using the legacy password protection (config
+     * directive "requirepass" in redis.conf) then you should only provide
+     * a password.
+     *
+     * If your Redis server is using ACL's (which are recommended as of
+     * Redis 6+) then you should provide both a username and a password.
+     * See https://redis.io/docs/manual/security/acl/
+     */
+    'store.redis.username' => '',
+    'store.redis.password' => '',
+
+    /*
+     * Communicate with Redis over a secure connection instead of plain TCP.
+     *
+     * This setting affects both single host connections as
+     * well as Sentinel mode.
+     */
+    'store.redis.tls' => false,
+
+    /*
+     * Verify the Redis server certificate.
+     */
+    'store.redis.insecure' => false,
+
+    /*
+     * Files related to secure communication with Redis.
+     *
+     * Files are searched in the 'certdir' when using relative paths.
+     */
+    'store.redis.ca_certificate' => null,
+    'store.redis.certificate' => null,
+    'store.redis.privatekey' => null,
+
+    /*
      * The prefix we should use on our Redis datastore.
      */
     'store.redis.prefix' => 'SimpleSAMLphp',
+
+    /*
+     * The master group to use for Redis Sentinel.
+     */
+    'store.redis.mastergroup' => 'mymaster',
+
+    /*
+     * The Redis Sentinel hosts.
+     * Example:
+     * 'store.redis.sentinels' => [
+     *     'tcp://[yoursentinel1]:[port]',
+     *     'tcp://[yoursentinel2]:[port]',
+     *     'tcp://[yoursentinel3]:[port]
+     * ],
+     *
+     * Use 'tls' instead of 'tcp' in order to make use of the additional
+     * TLS settings.
+     */
+    'store.redis.sentinels' => [],
+
+    /*********************
+     | IdP/SP PROXY MODE |
+     *********************/
+
+    /*
+     * If the IdP in front of SimpleSAMLphp in IdP/SP proxy mode sends
+     * AuthnContextClassRef, decide whether the AuthnContextClassRef will be
+     * processed by the IdP/SP proxy or if it will be passed to the SP behind
+     * the IdP/SP proxy.
+     */
+    'proxymode.passAuthnContextClassRef' => false,
 ];

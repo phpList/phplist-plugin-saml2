@@ -12,7 +12,10 @@
 namespace Symfony\Bundle\FrameworkBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Secrets\AbstractVault;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -27,14 +30,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  * @internal
  */
+#[AsCommand(name: 'secrets:set', description: 'Set a secret in the vault')]
 final class SecretsSetCommand extends Command
 {
-    protected static $defaultName = 'secrets:set';
+    private AbstractVault $vault;
+    private ?AbstractVault $localVault;
 
-    private $vault;
-    private $localVault;
-
-    public function __construct(AbstractVault $vault, AbstractVault $localVault = null)
+    public function __construct(AbstractVault $vault, ?AbstractVault $localVault = null)
     {
         $this->vault = $vault;
         $this->localVault = $localVault;
@@ -42,33 +44,32 @@ final class SecretsSetCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
-            ->setDescription('Set a secret in the vault.')
             ->addArgument('name', InputArgument::REQUIRED, 'The name of the secret')
             ->addArgument('file', InputArgument::OPTIONAL, 'A file where to read the secret from or "-" for reading from STDIN')
             ->addOption('local', 'l', InputOption::VALUE_NONE, 'Update the local vault.')
             ->addOption('random', 'r', InputOption::VALUE_OPTIONAL, 'Generate a random value.', false)
             ->setHelp(<<<'EOF'
-The <info>%command.name%</info> command stores a secret in the vault.
+                The <info>%command.name%</info> command stores a secret in the vault.
 
-    <info>%command.full_name% <name></info>
+                    <info>%command.full_name% <name></info>
 
-To reference secrets in services.yaml or any other config
-files, use <info>"%env(<name>)%"</info>.
+                To reference secrets in services.yaml or any other config
+                files, use <info>"%env(<name>)%"</info>.
 
-By default, the secret value should be entered interactively.
-Alternatively, provide a file where to read the secret from:
+                By default, the secret value should be entered interactively.
+                Alternatively, provide a file where to read the secret from:
 
-    <info>php %command.full_name% <name> filename</info>
+                    <info>php %command.full_name% <name> filename</info>
 
-Use "-" as a file name to read from STDIN:
+                Use "-" as a file name to read from STDIN:
 
-    <info>cat filename | php %command.full_name% <name> -</info>
+                    <info>cat filename | php %command.full_name% <name> -</info>
 
-Use <info>--local</info> to override secrets for local needs.
-EOF
+                Use <info>--local</info> to override secrets for local needs.
+                EOF
             )
         ;
     }
@@ -87,7 +88,7 @@ EOF
         }
 
         if ($this->localVault === $vault && !\array_key_exists($name, $this->vault->list())) {
-            $io->error(sprintf('Secret "%s" does not exist in the vault, you cannot override it locally.', $name));
+            $io->error(\sprintf('Secret "%s" does not exist in the vault, you cannot override it locally.', $name));
 
             return 1;
         }
@@ -106,9 +107,9 @@ EOF
         } elseif (is_file($file) && is_readable($file)) {
             $value = file_get_contents($file);
         } elseif (!is_file($file)) {
-            throw new \InvalidArgumentException(sprintf('File not found: "%s".', $file));
+            throw new \InvalidArgumentException(\sprintf('File not found: "%s".', $file));
         } elseif (!is_readable($file)) {
-            throw new \InvalidArgumentException(sprintf('File is not readable: "%s".', $file));
+            throw new \InvalidArgumentException(\sprintf('File is not readable: "%s".', $file));
         }
 
         if ($vault->generateKeys()) {
@@ -135,5 +136,12 @@ EOF
         }
 
         return 0;
+    }
+
+    public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
+    {
+        if ($input->mustSuggestArgumentValuesFor('name')) {
+            $suggestions->suggestValues(array_keys($this->vault->list(false)));
+        }
     }
 }
